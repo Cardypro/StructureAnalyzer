@@ -3,6 +3,13 @@ import math, re
 import os
 import threading
 import subprocess
+#from pip._internal import main
+#main(['install', 'networkx'])
+import networkx as nx
+import pysmiles as ps
+import matplotlib.pyplot as plt
+#import pysmiles
+
 
 
 class Atom:
@@ -18,6 +25,11 @@ class Atom:
 		self.name = name		#Name of Atom, e.g. CL4
 		self.element = element	#Element, e.g. CL
 		self.identifierString = model + "//" + chain + "/" + resn + "`" + resi + "/" + name
+
+	def create(self, x = 0, y = 0, z = 0, model = "none", chain = "none", resn = "none", resi = "none", name = "none", element = "none"):
+  		return Atom(x, y, z, model, chain, resn, resi, name, element)
+	
+# stored.atomCreator = Atom()
 
 
 #compilation of the produced .tex-file
@@ -132,6 +144,32 @@ Sequences["GLU"] = """\chemfig{
      =[:90]O% 8
 }"""
 
+def buildGraph(atom):
+	visitedAtoms = []
+	queue = [atom]
+	graph = nx.Graph()
+	cmd.h_add()
+
+	while len(queue) != 0:
+		stored.helpArray = []
+		currentNode = queue.pop(-1) 
+		cmd.select("nextAtomsSelection", "neighbor " + currentNode.identifierString)
+
+		cmd.iterate_state(1, "nextAtomsSelection", "stored.helpArray.append(Atom(x, y, z, model, chain, resn, resi, name, elem))")
+
+		graph.add_node(currentNode.identifierString, element = currentNode.element, charge = 0)
+
+		for atom in stored.helpArray:
+			graph.add_edge(currentNode.identifierString, atom.identifierString)
+			if atom.identifierString not in visitedAtoms:
+				visitedAtoms.append(atom.identifierString)
+				queue.append(atom)
+
+	ps.fill_valence(graph, respect_hcount = True, respect_bond_order = False)
+
+	print (ps.write_smiles(graph))
+	return graph
+
 #fills the above color-tags with the correct color
 def buildChemfig(sequence, atom):
 	if sequence in Sequences.keys():
@@ -139,6 +177,7 @@ def buildChemfig(sequence, atom):
 		seq = seq.replace("<" + atom + ">", "red") #colors the correct atom red
 		seq = re.sub("<.*?>", "black",seq)	#colors the remaining atoms black
 		return seq + " (" + sequence + ")"
+		
 	else:
 		return("unknown SEQ (" + sequence + ")")
 
@@ -198,7 +237,7 @@ def createDict(atom):
 			cmd.select("lesserSelection", "higherSelection")
 
 		else:
-			print(dictArray)
+			# print(dictArray)
 			return dictArray
 		
 
@@ -208,7 +247,7 @@ def createDict(atom):
 
 #Main-code. Calculates the distances between a selected ligand and all atoms within a given cutoff of a given .pdb-code.^
 # call it like StructureAnalyzer("6hn0", "DIF", 5, True)
-def StructureAnalyzer(pdbCode, ligandCode, cutoff = 3.7, autocompile = False): 
+def StructureAnalyzer(pdbCode = "6hn0", ligandCode = "DIF", cutoff = 3.7, autocompile = False): 
 
 	cmd.reinitialize()
 	AllDistances = []
@@ -303,6 +342,7 @@ else:
 	file = open(("./Output/" + pdbCode + ".tex"), "w")
 	file.write(re.sub("<pdb>", pdbCode, texFrameworkStart))
 
+	executed = False
 
 	#main-main-code: calculates the distances of each atom belonging to the pocket to each atom belonging to the ligand. If the distance is less than te cutoff  the distance is named by the iteration-IDs and drawn
 	for i in range(len(stored.atomsLig)):
@@ -312,6 +352,10 @@ else:
 				distances.append((stored.atomsLig[i].pos, stored.atomsPocket[j].pos, curDist))
 
 				cmd.h_add()
+
+				if not executed:
+					buildGraph(stored.atomsLig[i])
+					executed = True
 				createDict(stored.atomsLig[i]) #Ligands TODO: has to be saved, maybe in an array
 				createDict(stored.atomsPocket[j]) #Pocket
 				cmd. remove("hydro")

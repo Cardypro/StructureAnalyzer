@@ -1,5 +1,5 @@
 # StructureAnalyzer (WIP - not to be published yet)
-a program analyzing 3D protein structures from PDB to generate 2D binding motives. The current version (24th March 2020) does only create .tex-files for some given ligands and amino acids. It also generates the SMILES (if you don't know what SMILES are read [here](https://en.wikipedia.org/wiki/Simplified_molecular-input_line-entry_system)) for the selected ligand. Future versions will generate a XML file or a picture file representing the ligand - protein interactions.
+A program analyzing 3D protein structures from PDB to generate 2D binding motives. The current version (24th March 2020) does only create .tex-files for some given ligands and amino acids. It also generates the SMILES (if you don't know what SMILES are read [here](https://en.wikipedia.org/wiki/Simplified_molecular-input_line-entry_system)) for the selected ligand. Future versions will generate a XML file or a picture file representing the ligand - protein interactions.
 
 ## Requirements
 
@@ -22,7 +22,7 @@ To use the autocompilation you also need:
 
 To get the latest version of StructureAnalyzer use
 
->git clone https://github.com/Cardypro/SupraFit.git
+>git clone https://github.com/Cardypro/StructureAnalyzer.git
 
 After downloading StructureAnalyzer open Anaconda Prompt, navigate to the path where you installed the StructureAnalyzer and execute
 > pymol StructureAnalyzer_clean.py

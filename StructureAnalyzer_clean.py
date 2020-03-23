@@ -3,12 +3,9 @@ import math, re
 import os
 import threading
 import subprocess
-#from pip._internal import main
-#main(['install', 'networkx'])
 import networkx as nx
 import pysmiles as ps
-import matplotlib.pyplot as plt
-#import pysmiles
+
 
 
 
@@ -29,7 +26,6 @@ class Atom:
 	def create(self, x = 0, y = 0, z = 0, model = "none", chain = "none", resn = "none", resi = "none", name = "none", element = "none"):
   		return Atom(x, y, z, model, chain, resn, resi, name, element)
 	
-# stored.atomCreator = Atom()
 
 
 #compilation of the produced .tex-file
@@ -149,13 +145,15 @@ def buildGraph(atom):
 	queue = [atom]
 	graph = nx.Graph()
 	cmd.h_add()
+	stored.residue = atom.resn
 
 	while len(queue) != 0:
 		stored.helpArray = []
 		currentNode = queue.pop(-1) 
 		cmd.select("nextAtomsSelection", "neighbor " + currentNode.identifierString)
 
-		cmd.iterate_state(1, "nextAtomsSelection", "stored.helpArray.append(Atom(x, y, z, model, chain, resn, resi, name, elem))")
+		cmd.iterate_state(1, "nextAtomsSelection", """if resn == stored.reisue:
+	stored.helpArray.append(Atom(x, y, z, model, chain, resn, resi, name, elem))""")
 
 		graph.add_node(currentNode.identifierString, element = currentNode.element, charge = 0)
 

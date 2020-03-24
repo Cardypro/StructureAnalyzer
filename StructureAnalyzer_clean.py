@@ -1,12 +1,16 @@
 from pymol import cmd, stored, sys
 import math, re
 import os
-import threading
-import subprocess
 import networkx as nx
 import pysmiles as ps
 
 
+def multipleAnalyzer(pdbArray, ligand, cutoff = 3.7):
+
+	for code in pdbArray:
+		print("start " + str(code))
+		StructureAnalyzer(code, ligand, cutoff)
+		cmd.reinitialize()
 
 
 class Atom:
@@ -20,139 +24,26 @@ class Atom:
 		self.resn = resn		#name of residue, e.g. DIF
 		self.resi = resi		#Identifier of residue, e.g. 607
 		self.name = name		#Name of Atom, e.g. CL4
-		self.element = element	#Element, e.g. CL
+		self.element = element[0] + element[1:].lower()	#Element, e.g. Cl
 		self.identifierString = model + "//" + chain + "/" + resn + "`" + resi + "/" + name
 
 	def create(self, x = 0, y = 0, z = 0, model = "none", chain = "none", resn = "none", resi = "none", name = "none", element = "none"):
   		return Atom(x, y, z, model, chain, resn, resi, name, element)
 	
 
-
-#compilation of the produced .tex-file
-def compileTex(filename): 
-	print("compiling of "+ filename + " started")
-	subprocess.run(["pdflatex","-output-directory=Output", "./Output/" + filename + ".tex"], shell = True)
-	print("compiling of "+ filename + " ended")
-
-texFrameworkStart = r"""
-	\documentclass{standalone}
-	\usepackage[paperwidth=35cm,paperheight=100cm,margin=1in]{geometry}
-	\usepackage{chemfig, tabu}
-	\usepackage{siunitx}
-	\begin{document}
-	%\huge{<pdb>}
-	\begin{tabu}{X|X|X}
-	"""
-
-texFrameworkEnd = """
-	\end{tabu}
-	\end{document}"""
-
-#definition of the sequences in .tex - chemfig code. The Atoms have a color-tag named after their nomenclature in the .pdb files. This nomenclature seems to be consistent.
-Sequences = dict()
-
-#Diclofenac
-Sequences["DIF"] = """\chemfig{
-               \color{<O1>}{O}% 9
-         =[:60]\color{<C14>}{C}% 8
-                  (
-        -[:120,,,2]\color{<O2>}{O}H% 10
-                  )
-              -\chemabove{\color{<C13>}{C}}{H_2}% 7
-        -[:300]\color{<C7>}{C}% 5
-              -\color{<C8>}{C}% 4
-                  (
-       =_[:300,,,1]\color{<C9>}{CH}% 3
-         -[:240,,1]\chembelow{\color{<C10>}{C}}{H}% 2
-           =_[:180]\chembelow{\color{<C11>}{C}}{H}% 1
-        -[:120,,,2]\color{<C12>}{C}H% 6
-         =_[:60,,2]\phantom{C}% -> 5
-                  )
-         -[:60]\chemabove{\color{<N1>}{N}}{H}% 11
-              -\color{<C3>}{C}% 12
-       =^[:300]\color{<C4>}{C}% 13
-                  (
-            -[:240]\color{<CL4>}{Cl}% 19
-                  )
-              -\chembelow{\color{<C5>}{C}}{H}% 14
-    =^[:60,,,1]\color{<C6>}{C}H% 15
-     -[:120,,1]\chemabove{\color{<C1>}{C}}{H}% 16
-       =^[:180]\color{<C2>}{C}% 17
-                  (
-            -[:240]\phantom{C}% -> 12
-                  )
-        -[:120]\color{<CL2>}{Cl}% 18
-}"""
-
-#Alanine
-Sequences["ALA"] = """\chemfig{
-                \color{<CB>}{C}H_3% 1
-    -[:60,,2,2]\color{<CA>}{C}H% 2
-                   (
-        -[:120,,2,2]H_2N% 6
-                   )
-          -[,,2]C% 3
-                   (
-             =[:300]O% 4
-                   )
-      -[:60,,,1]OH% 5
-}"""
-
-#Water
-Sequences["HOH"] = "\chemfig{H_2\color{<O>}{O}}"
-
-#Leucine
-Sequences["LEU"] = """\chemfig{
-             \color{<CD1>}{C}H_3% 1
-    -[:90,,1]\chemabove{\color{<CC>}{C}}{H}% 2
-                (
-      -[:150,,,2]\color{<CD2>}{C}H_3% 3
-                )
-       -[:30]\chemabove{\color{<CB>}{C}}{H_2}% 4
-      -[:330]\chemabove{\color{<CA>}{C}}{H}% 5
-                (
-      -[:270,,,1]\color{<N>}{N}H_2% 9
-                )
-       -[:30]C% 6
-                (
-      -[:330,,,1]OH% 8
-                )
-       =[:90]\color{<O>}{O}% 7
-}"""
-
-#Glutamine
-Sequences["GLU"] = """\chemfig{
-           \color{<OE1>}{O}% 4
-    =[:270]\color{<CD>}{C}% 3
-              (
-    -[:210,,,2]\color{<OE2>}{O}H% 5
-              )
-    -[:330]\chembelow{C}{H_2}% 2
-     -[:30]\chemabove{C}{H_2}% 1
-    -[:330]\chemabove{C}{H}% 6
-              (
-    -[:270,,,1]NH_2% 10
-              )
-     -[:30]C% 7
-              (
-    -[:330,,,1]OH% 9
-              )
-     =[:90]O% 8
-}"""
-
-def buildGraph(atom):
+#turns the given molecule (list of atoms) into a network graph
+def buildGraph(atomlist):
 	visitedAtoms = []
-	queue = [atom]
+	queue = atomlist
 	graph = nx.Graph()
 	cmd.h_add()
-	stored.residue = atom.resn
 
 	while len(queue) != 0:
 		stored.helpArray = []
 		currentNode = queue.pop(-1) 
 		cmd.select("nextAtomsSelection", "neighbor " + currentNode.identifierString)
-
-		cmd.iterate_state(1, "nextAtomsSelection", """if resn == stored.reisue:
+		stored.currentResn = currentNode.resn
+		cmd.iterate_state(1, "nextAtomsSelection", """if resn == stored.currentResn:
 	stored.helpArray.append(Atom(x, y, z, model, chain, resn, resi, name, elem))""")
 
 		graph.add_node(currentNode.identifierString, element = currentNode.element, charge = 0)
@@ -165,19 +56,75 @@ def buildGraph(atom):
 
 	ps.fill_valence(graph, respect_hcount = True, respect_bond_order = False)
 
-	print (ps.write_smiles(graph))
+	smiles = ps.write_smiles(graph)
 	return graph
 
-#fills the above color-tags with the correct color
-def buildChemfig(sequence, atom):
-	if sequence in Sequences.keys():
-		seq = Sequences[sequence]
-		seq = seq.replace("<" + atom + ">", "red") #colors the correct atom red
-		seq = re.sub("<.*?>", "black",seq)	#colors the remaining atoms black
-		return seq + " (" + sequence + ")"
-		
-	else:
-		return("unknown SEQ (" + sequence + ")")
+
+#writes a -mrv-file (XML format) that can be opened with e.g. Marvinsketch
+def writeXML(graph, interactionList, pdbCode):
+
+	#creates an output folder
+	try:
+		os.mkdir("Output")
+	except:
+		pass
+
+	file = open(("./Output/" + pdbCode + ".mrv"), "w")
+	file.write("<MDocument>\n<MChemicalStruct>\n<molecule>\n")
+
+	dictionary = dict()
+
+	file.write("<atomArray>\n")
+	i = 1
+
+	#all atoms
+	for node in list(graph.nodes(data = True)):
+		if node[1]["element"] != "H":
+			file.write("<atom id=\"a" + str(i) + "\" elementType=\"" + node[1]["element"] + "\"/>" + "\n")
+			dictionary[node[0]] = i
+			i +=1
+
+	file.write("</atomArray>\n")
+	file.write("<bondArray>\n")
+
+	#all bonds
+	for edge in graph.edges.data():
+		if graph.nodes[edge[1]]["element"] != "H" and graph.nodes[edge[0]]["element"] != "H":
+			file.write("<bond atomRefs2=\"a" + str(dictionary[edge[0]]) + " a" + str(dictionary[edge[1]]) + "\" order=\"" + str(edge[2]["order"]) + "\"/>\n")
+
+	file.write("</bondArray>\n</molecule>\n</MChemicalStruct>\n")
+
+	#interactions
+	j = 0
+	for interactions in interactionList:
+		file.write("<MPolyline id=\"line" + str(j) + "\" lineColor=\"#ff9933\" thickness=\"0.04\">\n")
+		file.write("<MAtomSetPoint atomRefs=\"m1.a" + str(dictionary[interactions[0].identifierString]) +"\"/>\n")
+		file.write("<MAtomSetPoint atomRefs=\"m1.a" + str(dictionary[interactions[1].identifierString]) +"\"/>\n")
+		j += 1
+		file.write("</MPolyline>\n")
+
+	#name tags for interactions
+	k = 0
+	done = []
+	for interactions in interactionList:
+		if (interactions[1].resn,  interactions[1].resi) not in done and interactions[1].resn != "HOH": # no water
+			done.append((interactions[1].resn,  interactions[1].resi))
+			file.write("<MTextBox id=\"box" + str(k) + "\" autoSize=\"true\">\n")
+			file.write("<Field name=\"text\"><![CDATA[{D font=Arial,size=11}{fg=#000000}" + interactions[1].resn[0] + interactions[1].resn[1:].lower() + " " + interactions[1].resi + "]]></Field>\n")
+			file.write("<MPoint x=\"0\" y=\"0\"/>\n")
+			file.write("<MPoint x=\"0\" y=\"0\"/>\n")
+			file.write("<MPoint x=\"0\" y=\"0\"/>\n")
+			file.write("<MPoint x=\"0\" y=\"0\"/>\n")
+			file.write("</MTextBox>\n")
+			file.write("<MPolyline id=\"boxline" +str(k)+ "\" thickness=\"1E-3\">\n")
+			file.write("<MRectanglePoint pos=\"4\" rectRef=\"box" + str(k) + "\"/>\n")
+			file.write("<MAtomSetPoint atomRefs=\"m1.a" + str(dictionary[interactions[1].identifierString]) +"\"/>\n")
+			k += 1
+			file.write("</MPolyline>\n")
+
+
+	file.write("</MDocument>")
+
 
 #calculates the 3D-distance of two given coordinates
 def calcDist(pos1, pos2):
@@ -214,7 +161,7 @@ def writeToDict(dictionary, element):
 	else:
 		dictionary[element] = 1
 
-
+#TODO: should be obsolete
 #  creates an array of dictionaries where the n-th entry represents all atoms with a bond-distance of exact n bonds
 def createDict(atom):
 	cmd.select("lesserSelection", atom.identifierString)
@@ -245,7 +192,7 @@ def createDict(atom):
 
 #Main-code. Calculates the distances between a selected ligand and all atoms within a given cutoff of a given .pdb-code.^
 # call it like StructureAnalyzer("6hn0", "DIF", 5, True)
-def StructureAnalyzer(pdbCode = "6hn0", ligandCode = "DIF", cutoff = 3.7, autocompile = False): 
+def StructureAnalyzer(pdbCode = "6hn0", ligandCode = "DIF", cutoff = 3.7): 
 
 	cmd.reinitialize()
 	AllDistances = []
@@ -308,7 +255,7 @@ else:
 	#prepare drawing
 	cmd.hide('all')
 	cmd.select(stored.ligandSelectionName, ligandCode + "`" + str(minimalDist_resi) + "/")
-	cmd.select('helpselection', 'br. all within 15 of ' + stored.ligandSelectionName)
+	cmd.select('helpselection', 'br. all within ' + (str(cutoff + 5)) + ' of ' + stored.ligandSelectionName)
 	cmd.select('pocket', 'helpselection and not ' + stored.ligandSelectionName)
 
 	print('select binding pocket')
@@ -331,62 +278,49 @@ else:
 	cmd.iterate_state(1, 'pocket', "stored.atomsPocket.append(Atom(x, y, z, model, chain, resn, resi, name, elem))")
 
 
+	# #creates an output folder and a tex-file
+	# try:
+	# 	os.mkdir("Output")
+	# except:
+	# 	pass
+	# file = open(("./Output/" + pdbCode + ".tex"), "w")
+	# file.write(re.sub("<pdb>", pdbCode, texFrameworkStart))
 
-	#creates an output folder and a tex-file
-	try:
-		os.mkdir("Output")
-	except:
-		pass
-	file = open(("./Output/" + pdbCode + ".tex"), "w")
-	file.write(re.sub("<pdb>", pdbCode, texFrameworkStart))
-
-	executed = False
+	interactionList = []
+	atomsForGraph = []
 
 	#main-main-code: calculates the distances of each atom belonging to the pocket to each atom belonging to the ligand. If the distance is less than te cutoff  the distance is named by the iteration-IDs and drawn
-	for i in range(len(stored.atomsLig)):
-		for j in range(len(stored.atomsPocket)):
-			curDist = calcDist(stored.atomsLig[i].pos, stored.atomsPocket[j].pos)
+	for ligandAtoms in stored.atomsLig:
+		atomsForGraph.append(ligandAtoms)
+
+		for pocketAtoms in stored.atomsPocket:
+			curDist = calcDist(ligandAtoms.pos, pocketAtoms.pos)
+
 			if curDist <= cutoff:
-				distances.append((stored.atomsLig[i].pos, stored.atomsPocket[j].pos, curDist))
+				distances.append((ligandAtoms.pos, pocketAtoms.pos, curDist))
 
-				cmd.h_add()
-
-				if not executed:
-					buildGraph(stored.atomsLig[i])
-					executed = True
-				createDict(stored.atomsLig[i]) #Ligands TODO: has to be saved, maybe in an array
-				createDict(stored.atomsPocket[j]) #Pocket
-				cmd. remove("hydro")
-
-				dist_obj = cmd.distance(("distance" + str(i) + "_" + str(j)),
-				stored.atomsLig[i].identifierString,
-				stored.atomsPocket[j].identifierString
+				dist_obj = cmd.distance(("distance"),
+				ligandAtoms.identifierString,
+				pocketAtoms.identifierString,
+				cutoff
 				)
-				cmd.color("cyan", ("distance" + str(i) + "_" + str(j)))
+				cmd.color("cyan", "distance")
 
-
-				#creates the .tex file
-				file.write(buildChemfig(str(stored.atomsLig[i].resn), str(stored.atomsLig[i].name)) #ligand side
-				+ str(stored.atomsLig[i].name)
-				+ " & "
-				+ buildChemfig(str(stored.atomsPocket[j].resn), (str(stored.atomsPocket[j].name))) #Pocket side
-				+ str(stored.atomsPocket[j].resi) 
-				+ " / " 
-				+ str(stored.atomsPocket[j].name) #which atom?
-				+ " & " 
-				+ str(round(curDist,3)) 	#prints distance
-				+ " \\si{\\angstrom}" 
-				+ "\\\\ \\hline")
+				interactionList.append((ligandAtoms, pocketAtoms, currentDist))
+				atomsForGraph.append(pocketAtoms)
+				
+	cmd.h_add()
+	currGraph = buildGraph(atomsForGraph)
+	writeXML(currGraph, interactionList, pdbCode)
+	cmd. remove("hydro")
 	
-	file.write(texFrameworkEnd)
-	file.close()
 	print("Analyzing " + pdbCode + " finished")
 
 
-	#autocompilation
-	if autocompile == True:
-		try:
-			thread = threading.Thread(target=compileTex, args = (pdbCode,))
-			thread.start()
-		except:
-			print("some Error occured")
+	# #autocompilation
+	# if autocompile == True:
+	# 	try:
+	# 		thread = threading.Thread(target=compileTex, args = (pdbCode,))
+	# 		thread.start()
+	# 	except:
+	# 		print("some Error occured")

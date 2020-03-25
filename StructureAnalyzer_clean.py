@@ -129,6 +129,7 @@ def writeXML(graph, interactionList, pdbCode):
 #calculates the 3D-distance of two given coordinates
 def calcDist(pos1, pos2):
 	dist = 0
+
 	x1 = pos1[0]
 	y1 = pos1[1]
 	z1 = pos1[2]
@@ -263,6 +264,7 @@ else:
 	cmd.show('sticks', stored.ligandSelectionName)
 	cmd.util.cbaw('pocket')
 	cmd.util.cbao(stored.ligandSelectionName)
+	cmd.remove("hydro")
 
 	print(str(cmd.count_atoms(stored.ligandSelectionName)) + " atoms have been selected as Ligand / " + ligandCode)
 
@@ -312,7 +314,7 @@ else:
 	cmd.h_add()
 	currGraph = buildGraph(atomsForGraph)
 	writeXML(currGraph, interactionList, pdbCode)
-	cmd. remove("hydro")
+	cmd.remove("hydro")
 	
 	print("Analyzing " + pdbCode + " finished")
 

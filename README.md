@@ -1,5 +1,5 @@
 # StructureAnalyzer (WIP - not to be published yet)
-A program analyzing 3D protein structures from PDB to generate 2D binding motives. The current version (24th March 2020) does only create .tex-files for some given ligands and amino acids. It also generates the SMILES (if you don't know what SMILES are read [here](https://en.wikipedia.org/wiki/Simplified_molecular-input_line-entry_system)) for the selected ligand. Future versions will generate a XML file or a picture file representing the ligand - protein interactions.
+A program analyzing 3D protein structures from PDB to generate 2D binding motives. The current version creates .mrv-files that can be open with [MarvinSketch](https://chemaxon.com/products/marvin) for example. The .mrv-file shows interactions between ligand and protein atoms.
 
 ## Requirements
 
@@ -13,10 +13,7 @@ Next install the required packages using
 
 >pip install pysmiles
 
-To use the autocompilation you also need:
-
-- pdfLaTeX
-- the LaTeX-Packages chemfig, geometry, tabu and siunitx
+To view the generated .mrv-file (xml like) I recommend using MarvinSketch (download from [here](https://chemaxon.com/products/marvin/download)). To use this you have to create an account and sign in.
    
 ## Usage
 
@@ -28,14 +25,14 @@ After downloading StructureAnalyzer open Anaconda Prompt, navigate to the path w
 > pymol StructureAnalyzer_clean.py
 
 Pymol should start now. Type 
-> StructureAnalyzer("PDB-code", "Ligand code", cutoff, autocompile = True/False)
+> StructureAnalyzer("PDB-code", "Ligand code", cutoff)
 
 e.g.
-> StructureAnalyzer("6hn0", "DIF", 3.8, autocompile = True)
+> StructureAnalyzer("6hn0", "DIF", 3.8)
 
 to analyze the interactions of the PDB entry named [6HN0](https://www.rcsb.org/structure/6hn0) with Diclofenac within a cutoff range of 3.8 angstrom around the Diclofenac.
 
-In the current version (24th March 2020) the program produces a .tex file and prints the SMILES for your ligand.
+The produced .mrv-file can be found in the /Output directory. You can open the file using MarvinSketch. The interactions are represented by orange lines by default. The names of the residues are connected to the corresponding residue by a thin grey line so you can easily rearange them in a aesthetical way.
 
 ## Short Documentation
 
@@ -50,11 +47,8 @@ The ligand code is the three - letter - figure - code given by the [PDB](https:/
 ### cutoff (float)
 The cutoff is calculated by using simple 3D geometry (Pythagorean theorem). **The program does not evaluate whether the found interactions make sense in a chemical view.** The standard value is 3.7 A.
 
-### autocompile (boolean)
-The autocompilation automatically compiles the produced .tex files to generate a PDF. The PDF consists of a table containing structures where the interacting atoms of the ligands are marked (until now this only works for DIF and water, glutamine, leucine and alanine). This is especially useful for batch processing. To analyze more than one Structure at the same time open the **run.py** file and insert the codes and decide whether you want to use the autocompilation. Then run Anaconda Prompt and write
->pymol run.py
-
-The autocompilation will be multithreaded.
+### multipleAnalyzer (array of PDB-codes, Ligand code, cutoff)
+Instead of using the StructureAnalyzer command you can use the multipleAnalyzer. This allows you to analyze more than one pdb-code at once. It works similar to the StructureAnalyzer except it takes an array of strings containing the protein codes to be analyzed.
 
 ## Troubleshooting
 
@@ -65,10 +59,9 @@ make sure you've installed Pymol **after** you've installed Anaconda.
 
 ## Further notes
 
-### SMILES generation
-The SMILES are generated with [pysmiles](https://pypi.org/project/pysmiles/) writen by Peter C. Kroon - special thanks to him. The SMILES are obtained by [Depth-first search](https://en.wikipedia.org/wiki/Depth-first_search)ing the ligand and generating a graph with atoms as nodes and bonds as edges.
+### Intern SMILES usage
+This program uses [pysmiles](https://pypi.org/project/pysmiles/) writen by Peter C. Kroon - special thanks to him. The Program generates network graphs obtained by [Depth-first search](https://en.wikipedia.org/wiki/Depth-first_search)ing the ligand and generating a graph with atoms as nodes and bonds as edges. Since Pymol isn't able to give information about the bond order pysmiles calculates the bond order from one atom to another.
 
 ### Future Steps
-
-- The generation of .tex files is saw to be impractical and obsolete so it will be removed in future commits.
-- The final version should be able to generate binding motifs (maybe using MarvinJS or Marvin Sketch) representing the interaction of protein and Ligand.
+- At the current state there is no way to show the bond length in the generated .mrv-file
+- In future versions there should be some more aesthetic options like different colours for different types of interactions.

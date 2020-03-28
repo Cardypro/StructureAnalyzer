@@ -62,6 +62,26 @@ make sure you've installed Pymol **after** you've installed Anaconda.
 ### Intern SMILES usage
 This program uses [pysmiles](https://pypi.org/project/pysmiles/) writen by Peter C. Kroon - special thanks to him. The Program generates network graphs obtained by [Depth-first search](https://en.wikipedia.org/wiki/Depth-first_search)ing the ligand and generating a graph with atoms as nodes and bonds as edges. Since Pymol isn't able to give information about the bond order pysmiles calculates the bond order from one atom to another.
 
-### Future Steps
+### Future steps
 - At the current state there is no way to show the bond length in the generated .mrv-file
 - In future versions there should be some more aesthetic options like different colours for different types of interactions.
+
+## References
+
+ - The PyMOL Molecular Graphics System, Version 2.0 Schrödinger, LLC. 
+ - P. C. Kroon, pySmiles v1.0.0 (2018), https://github.com/pckroon/pysmiles.
+ 
+ ## Licences
+ 
+ PySmiles is distributed under the Apache 2.0 license. Copyright 2018 Peter C Kroon
+ > Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+>Unless required by applicable law or agreed to in writing, software
+>distributed under the License is distributed on an "AS IS" BASIS,
+>WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+>See the License for the specific language governing permissions and
+>limitations under the License.

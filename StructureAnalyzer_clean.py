@@ -101,14 +101,30 @@ def writeXML(graph, interactionList, pdbCode):
 		file.write("<MPolyline id=\"line" + str(j) + "\" lineColor=\"#ff9933\" thickness=\"0.04\">\n")
 		file.write("<MAtomSetPoint atomRefs=\"m1.a" + str(dictionary[interactions[0].identifierString]) +"\"/>\n")
 		file.write("<MAtomSetPoint atomRefs=\"m1.a" + str(dictionary[interactions[1].identifierString]) +"\"/>\n")
-		j += 1
 		file.write("</MPolyline>\n")
+
+	#distances
+		file.write("<MTextBox id=\"distBox" + str(j) + "\" autoSize=\"true\">\n")
+		file.write("<Field name=\"text\"><![CDATA[{D font=Arial,size=9}{fg=#000000}" + str(round(interactions[2],3)) + " A]]></Field>\n")
+		file.write("<MPoint x=\"0\" y=\"0\"/>\n")
+		file.write("<MPoint x=\"0\" y=\"0\"/>\n")
+		file.write("<MPoint x=\"0\" y=\"0\"/>\n")
+		file.write("<MPoint x=\"0\" y=\"0\"/>\n")
+		file.write("</MTextBox>\n")
+
+		file.write("<MPolyline id=\"distLine" + str(j) + "\" lineColor=\"#000000\" thickness=\"0.01\">\n")
+		file.write("<MRectanglePoint pos=\"4\" rectRef=\"distBox" + str(j) +"\"/>\n")
+		file.write("<MMidPoint lineRef=\"line" + str(j) +"\"/>\n")
+		file.write("</MPolyline>\n")
+
+		j += 1
+		
 
 	#name tags for interactions
 	k = 0
 	done = []
 	for interactions in interactionList:
-		if (interactions[1].resn,  interactions[1].resi) not in done and interactions[1].resn != "HOH": # no water
+		if (interactions[1].resn,  interactions[1].resi) not in done and interactions[1].resn != "HOH": # no water tag
 			done.append((interactions[1].resn,  interactions[1].resi))
 			file.write("<MTextBox id=\"box" + str(k) + "\" autoSize=\"true\">\n")
 			file.write("<Field name=\"text\"><![CDATA[{D font=Arial,size=11}{fg=#000000}" + interactions[1].resn[0] + interactions[1].resn[1:].lower() + " " + interactions[1].resi + "]]></Field>\n")
@@ -117,11 +133,12 @@ def writeXML(graph, interactionList, pdbCode):
 			file.write("<MPoint x=\"0\" y=\"0\"/>\n")
 			file.write("<MPoint x=\"0\" y=\"0\"/>\n")
 			file.write("</MTextBox>\n")
-			file.write("<MPolyline id=\"boxline" +str(k)+ "\" thickness=\"1E-3\">\n")
+			file.write("<MPolyline id=\"boxline" +str(k)+ "\" thickness=\"0.01\" lineColor=\"#0000ff\">\n")
 			file.write("<MRectanglePoint pos=\"4\" rectRef=\"box" + str(k) + "\"/>\n")
 			file.write("<MAtomSetPoint atomRefs=\"m1.a" + str(dictionary[interactions[1].identifierString]) +"\"/>\n")
 			k += 1
 			file.write("</MPolyline>\n")
+
 
 
 	file.write("</MDocument>")
@@ -313,7 +330,8 @@ else:
 				)
 				cmd.color("cyan", "distance")
 
-				interactionList.append((ligandAtoms, pocketAtoms, currentDist))
+				interactionList.append((ligandAtoms, pocketAtoms, curDist))
+				
 				atomsForGraph.append(pocketAtoms)
 				
 	cmd.h_add()

@@ -5,11 +5,12 @@ import networkx as nx
 import pysmiles as ps
 
 
-def multipleAnalyzer(pdbArray, ligand, cutoff = 3.7):
+
+def multipleAnalyzer(pdbArray, ligand, cutoff = 3.7, ignoreH2O = False):
 
 	for code in pdbArray:
 		print("start " + str(code))
-		StructureAnalyzer(code, ligand, cutoff)
+		StructureAnalyzer(code, ligand, cutoff, ignoreH2O)
 		cmd.reinitialize()
 
 
@@ -193,7 +194,7 @@ def createDict(atom):
 
 #Main-code. Calculates the distances between a selected ligand and all atoms within a given cutoff of a given .pdb-code.^
 # call it like StructureAnalyzer("6hn0", "DIF", 5, True)
-def StructureAnalyzer(pdbCode = "6hn0", ligandCode = "DIF", cutoff = 3.7): 
+def StructureAnalyzer(pdbCode = "6hn0", ligandCode = "DIF", cutoff = 3.7, ignoreH2O = False): 
 
 	cmd.reinitialize()
 	AllDistances = []
@@ -296,9 +297,13 @@ else:
 		atomsForGraph.append(ligandAtoms)
 
 		for pocketAtoms in stored.atomsPocket:
+			if (pocketAtoms.resn == "HOH" or ligandAtoms.resn == "HOH") and ignoreH2O:
+				continue
+
 			curDist = calcDist(ligandAtoms.pos, pocketAtoms.pos)
 
 			if curDist <= cutoff:
+
 				distances.append((ligandAtoms.pos, pocketAtoms.pos, curDist))
 
 				dist_obj = cmd.distance(("distance"),

@@ -70,7 +70,7 @@ def writeXML(graph, interactionList, pdbCode):
 	except:
 		pass
 
-	file = open(("./Output/" + pdbCode + ".mrv"), "w")
+	file = open(("./Output/" + pdbCode + ".mrv"), "w", encoding="utf-8")
 	file.write("<MDocument>\n<MChemicalStruct>\n<molecule>\n")
 
 	dictionary = dict()
@@ -105,7 +105,7 @@ def writeXML(graph, interactionList, pdbCode):
 
 	#distances
 		file.write("<MTextBox id=\"distBox" + str(j) + "\" autoSize=\"true\">\n")
-		file.write("<Field name=\"text\"><![CDATA[{D font=Arial,size=9}{fg=#000000}" + str(round(interactions[2],3)) + " A]]></Field>\n")
+		file.write("<Field name=\"text\"><![CDATA[{D font=Arial,size=9}{fg=#000000}" + str(round(interactions[2],3)) + " Å]]></Field>\n")
 		file.write("<MPoint x=\"0\" y=\"0\"/>\n")
 		file.write("<MPoint x=\"0\" y=\"0\"/>\n")
 		file.write("<MPoint x=\"0\" y=\"0\"/>\n")

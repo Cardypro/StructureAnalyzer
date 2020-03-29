@@ -48,7 +48,7 @@ The ligand code is the three - letter - figure - code given by the [PDB](https:/
 The cutoff is calculated by using simple 3D geometry (Pythagorean theorem). **The program does not evaluate whether the found interactions make sense in a chemical view.** The standard value is 3.7 A.
 
 ### ignoreH2O (boolean)
-This decides whether to ignore water Molecules or not. The default value is False so water molecules are depicted.
+This decides whether to ignore water molecules or not. The default value is False so water molecules are depicted.
 
 ### multipleAnalyzer (array of PDB-codes, Ligand code, cutoff, ignoreH2O)
 Instead of using the StructureAnalyzer command you can use the multipleAnalyzer. This allows you to analyze more than one pdb-code at once. It works similar to the StructureAnalyzer except it takes an array of strings containing the protein codes to be analyzed.
@@ -63,7 +63,7 @@ make sure you've installed Pymol **after** you've installed Anaconda.
 ## Further notes
 
 ### Intern SMILES usage
-This program uses [pysmiles](https://pypi.org/project/pysmiles/) writen by Peter C. Kroon - special thanks to him. The Program generates network graphs obtained by [Depth-first search](https://en.wikipedia.org/wiki/Depth-first_search)ing the ligand and generating a graph with atoms as nodes and bonds as edges. Since Pymol isn't able to give information about the bond order pysmiles calculates the bond order from one atom to another.
+This program uses [pysmiles](https://pypi.org/project/pysmiles/) writen by Peter C. Kroon - special thanks to him. The program generates network graphs obtained by [Depth-first search](https://en.wikipedia.org/wiki/Depth-first_search)ing the ligand and generating a graph with atoms as nodes and bonds as edges. Since PyMOL isn't able to give information about the bond order PySmiles calculates the bond order from one atom to another.
 
 ### Future steps
 - At the current state there is no way to show the bond length in the generated .mrv-file

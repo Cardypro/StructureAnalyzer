@@ -47,7 +47,10 @@ The ligand code is the three - letter - figure - code given by the [PDB](https:/
 ### cutoff (float)
 The cutoff is calculated by using simple 3D geometry (Pythagorean theorem). **The program does not evaluate whether the found interactions make sense in a chemical view.** The standard value is 3.7 A.
 
-### multipleAnalyzer (array of PDB-codes, Ligand code, cutoff)
+### ignoreH2O (boolean)
+This decides whether to ignore water Molecules or not. The default value is False so water molecules are depicted.
+
+### multipleAnalyzer (array of PDB-codes, Ligand code, cutoff, ignoreH2O)
 Instead of using the StructureAnalyzer command you can use the multipleAnalyzer. This allows you to analyze more than one pdb-code at once. It works similar to the StructureAnalyzer except it takes an array of strings containing the protein codes to be analyzed.
 
 ## Troubleshooting

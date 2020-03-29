@@ -73,7 +73,7 @@ This program uses [pysmiles](https://pypi.org/project/pysmiles/) writen by Peter
  
  ## Licences
  
- PySmiles is distributed under the Apache 2.0 license. Copyright 2018 Peter C Kroon
+ StructureAnalyzer and PySmiles are distributed under the Apache 2.0 license.
    >Licensed under the Apache License, Version 2.0 (the "License");
    >you may not use this file except in compliance with the License.
    >You may obtain a copy of the License at

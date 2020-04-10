@@ -14,6 +14,51 @@ def multipleAnalyzer(pdbArray, ligand, cutoff = 3.7, ignoreH2O = False):
 		cmd.reinitialize()
 
 
+vdwRadii = {
+	"Ag": 1.7,
+	#"Al":
+	"Ar": 1.9,
+	"As": 2.0,
+	"Au": 1.7,
+	#B
+	"Bi": 2.4,
+	"Br": 1.9,
+	"C": 1.7,
+	"Cd": 1.6,
+	"Cl": 1.8,
+	"Cu": 1.4,
+	"O": 1.5,
+	"F": 1.5,
+	"Ga": 1.9,
+	"H": 1.4,
+	"N": 1.6
+
+
+
+}
+
+def getCutoff(Array): #[Atom1, ['1.2','vdw'], Atom2]
+	vdwCutoff = 0
+	
+	try:
+		vdwCutoff = (vdwRadii[Array[0].element] + vdwRadii[Array[2].element]) * float(Array[1][0])
+
+		if (Array[0].hasH or Array[2].hasH) and Array[0].element != "C" and Array[2].element != "C": # if there is a H on a hetero atom, the cutoff is extended by the diameter of a H
+			vdwCutoff += vdwRadii["H"]*2
+	
+	except:
+		print("Error: unable to evaluate vdwRadii for " + Array[0].element + " and/or " + Array[2].element)
+	return vdwCutoff
+
+
+
+class Interaction:
+	def __init__(self, atomA, atomB, distance):
+		self.atomA = atomA
+		self.atomB = atomB
+		self.dist = distance
+		self.type = "default" 
+
 class Atom:
 	def __init__(self, x = 0, y = 0, z = 0, model = "none", chain = "none", resn = "none", resi = "none", name = "none", element = "none"):
 		self.x = x				#pos x
@@ -27,10 +72,18 @@ class Atom:
 		self.name = name		#Name of Atom, e.g. CL4
 		self.element = element[0] + element[1:].lower()	#Element, e.g. Cl
 		self.identifierString = model + "//" + chain + "/" + resn + "`" + resi + "/" + name
+		self.hasH = False
 
 	def create(self, x = 0, y = 0, z = 0, model = "none", chain = "none", resn = "none", resi = "none", name = "none", element = "none"):
   		return Atom(x, y, z, model, chain, resn, resi, name, element)
 	
+
+def analyzeInput(inputString):
+	input = inputString.split()
+	inputA = input[0].split("|")
+	length = input[1].split("*")
+	inputB = input[2].split("|")
+	return [inputA, length, inputB]
 
 #turns the given molecule (list of atoms) into a network graph
 def buildGraph(atomlist):
@@ -99,13 +152,13 @@ def writeXML(graph, interactionList, pdbCode):
 	j = 0
 	for interactions in interactionList:
 		file.write("<MPolyline id=\"line" + str(j) + "\" lineColor=\"#ff9933\" thickness=\"0.04\">\n")
-		file.write("<MAtomSetPoint atomRefs=\"m1.a" + str(dictionary[interactions[0].identifierString]) +"\"/>\n")
-		file.write("<MAtomSetPoint atomRefs=\"m1.a" + str(dictionary[interactions[1].identifierString]) +"\"/>\n")
+		file.write("<MAtomSetPoint atomRefs=\"m1.a" + str(dictionary[interactions.atomA.identifierString]) +"\"/>\n")
+		file.write("<MAtomSetPoint atomRefs=\"m1.a" + str(dictionary[interactions.atomB.identifierString]) +"\"/>\n")
 		file.write("</MPolyline>\n")
 
 	#distances
 		file.write("<MTextBox id=\"distBox" + str(j) + "\" autoSize=\"true\">\n")
-		file.write("<Field name=\"text\"><![CDATA[{D font=Arial,size=9}{fg=#000000}" + str(round(interactions[2],3)) + " Å]]></Field>\n")
+		file.write("<Field name=\"text\"><![CDATA[{D font=Arial,size=9}{fg=#000000}" + str(round(interactions.dist,3)) + " Å]]></Field>\n")
 		file.write("<MPoint x=\"0\" y=\"0\"/>\n")
 		file.write("<MPoint x=\"0\" y=\"0\"/>\n")
 		file.write("<MPoint x=\"0\" y=\"0\"/>\n")
@@ -124,10 +177,10 @@ def writeXML(graph, interactionList, pdbCode):
 	k = 0
 	done = []
 	for interactions in interactionList:
-		if (interactions[1].resn,  interactions[1].resi) not in done and interactions[1].resn != "HOH": # no water tag
-			done.append((interactions[1].resn,  interactions[1].resi))
+		if (interactions.atomB.resn,  interactions.atomB.resi) not in done and interactions.atomB.resn != "HOH": # no water tag
+			done.append((interactions.atomB.resn,  interactions.atomB.resi))
 			file.write("<MTextBox id=\"box" + str(k) + "\" autoSize=\"true\">\n")
-			file.write("<Field name=\"text\"><![CDATA[{D font=Arial,size=11}{fg=#000000}" + interactions[1].resn[0] + interactions[1].resn[1:].lower() + " " + interactions[1].resi + "]]></Field>\n")
+			file.write("<Field name=\"text\"><![CDATA[{D font=Arial,size=11}{fg=#000000}" + interactions.atomB.resn[0] + interactions.atomB.resn[1:].lower() + " " + interactions.atomB.resi + "]]></Field>\n")
 			file.write("<MPoint x=\"0\" y=\"0\"/>\n")
 			file.write("<MPoint x=\"0\" y=\"0\"/>\n")
 			file.write("<MPoint x=\"0\" y=\"0\"/>\n")
@@ -135,7 +188,7 @@ def writeXML(graph, interactionList, pdbCode):
 			file.write("</MTextBox>\n")
 			file.write("<MPolyline id=\"boxline" +str(k)+ "\" thickness=\"0.01\" lineColor=\"#0000ff\">\n")
 			file.write("<MRectanglePoint pos=\"4\" rectRef=\"box" + str(k) + "\"/>\n")
-			file.write("<MAtomSetPoint atomRefs=\"m1.a" + str(dictionary[interactions[1].identifierString]) +"\"/>\n")
+			file.write("<MAtomSetPoint atomRefs=\"m1.a" + str(dictionary[interactions.atomB.identifierString]) +"\"/>\n")
 			k += 1
 			file.write("</MPolyline>\n")
 
@@ -211,7 +264,10 @@ def createDict(atom):
 
 #Main-code. Calculates the distances between a selected ligand and all atoms within a given cutoff of a given .pdb-code.^
 # call it like StructureAnalyzer("6hn0", "DIF", 5, True)
-def StructureAnalyzer(pdbCode = "6hn0", ligandCode = "DIF", cutoff = 3.7, ignoreH2O = False): 
+def StructureAnalyzer(pdbCode = "6hn0", ligandCode = "DIF", inputString = "* 3.7 *", ignoreH2O = False): 
+
+	condition = analyzeInput(inputString)
+	# cutoff = condition[1]
 
 	cmd.reinitialize()
 	AllDistances = []
@@ -274,7 +330,7 @@ else:
 	#prepare drawing
 	cmd.hide('all')
 	cmd.select(stored.ligandSelectionName, ligandCode + "`" + str(minimalDist_resi) + "/")
-	cmd.select('helpselection', 'br. all within ' + (str(cutoff + 5)) + ' of ' + stored.ligandSelectionName)
+	cmd.select('helpselection', 'br. all within ' + (str(8)) + ' of ' + stored.ligandSelectionName)
 	cmd.select('pocket', 'helpselection and not ' + stored.ligandSelectionName)
 
 	print('select binding pocket')
@@ -295,8 +351,29 @@ else:
 
 	#reads all informations belonging to the selected binding pocket and ligand
 	cmd.iterate_state(1,stored.ligandSelectionName, "stored.atomsLig.append(Atom(x, y, z, model, chain, resn, resi, name, elem))")
+
+	cmd.h_add()
+
+	for atoms in stored.atomsLig:
+		stored.hasH = False
+		cmd.select("neighbors", "neighbor " + atoms.identifierString)
+		cmd.iterate_state(1,"neighbors","""if elem =="H":
+		stored.hasH = True""")
+		atoms.hasH = stored.hasH
+
+	cmd.remove("hydro")
 	cmd.iterate_state(1, 'pocket', "stored.atomsPocket.append(Atom(x, y, z, model, chain, resn, resi, name, elem))")
 
+	cmd.h_add()
+	
+	for atoms in stored.atomsPocket:
+		stored.hasH = False
+		cmd.select("neighbors", "neighbor " + atoms.identifierString)
+		cmd.iterate_state(1,"neighbors","""if elem =="H":
+		stored.hasH = True""")
+		atoms.hasH = stored.hasH
+
+	cmd.remove("hydro")
 
 	# #creates an output folder and a tex-file
 	# try:
@@ -318,21 +395,32 @@ else:
 				continue
 
 			curDist = calcDist(ligandAtoms.pos, pocketAtoms.pos)
+			condition = analyzeInput(inputString)
 
-			if curDist <= cutoff:
+			# print(condition[1])
 
-				distances.append((ligandAtoms.pos, pocketAtoms.pos, curDist))
+			if (ligandAtoms.element in condition[0] or "*" in condition[0]) and  (pocketAtoms.element in  condition[2] or "*" in condition[2]):
 
-				dist_obj = cmd.distance(("distance"),
-				ligandAtoms.identifierString,
-				pocketAtoms.identifierString,
-				cutoff
-				)
-				cmd.color("cyan", "distance")
-
-				interactionList.append((ligandAtoms, pocketAtoms, curDist))
+				if "vdw" in condition[1]:
+					cutoff = getCutoff([ligandAtoms, condition[1],pocketAtoms])
+				else:
+					cutoff = float(condition[1][0])
 				
-				atomsForGraph.append(pocketAtoms)
+				if curDist <= cutoff:
+
+					distances.append((ligandAtoms.pos, pocketAtoms.pos, curDist))
+
+					dist_obj = cmd.distance(("distance"),
+					ligandAtoms.identifierString,
+					pocketAtoms.identifierString,
+					cutoff
+					)
+					cmd.color("cyan", "distance")
+
+					interactionList.append(Interaction(ligandAtoms, pocketAtoms, curDist))
+					#interactionList.append((ligandAtoms, pocketAtoms, curDist))
+					
+					atomsForGraph.append(pocketAtoms)
 				
 	cmd.h_add()
 	currGraph = buildGraph(atomsForGraph)

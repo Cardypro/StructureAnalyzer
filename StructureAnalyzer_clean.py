@@ -6,21 +6,19 @@ import pysmiles as ps
 
 
 
-def multipleAnalyzer(pdbArray, ligand, cutoff = 3.7, ignoreH2O = False):
+def multipleAnalyzer(pdbArray, ligand, inputString = "* 1*vdw *", ignoreH2O = False):
 
 	for code in pdbArray:
 		print("start " + str(code))
-		StructureAnalyzer(code, ligand, cutoff, ignoreH2O)
+		StructureAnalyzer(code, ligand, inputString, ignoreH2O)
 		cmd.reinitialize()
 
 
 vdwRadii = {
 	"Ag": 1.7,
-	#"Al":
 	"Ar": 1.9,
 	"As": 2.0,
 	"Au": 1.7,
-	#B
 	"Bi": 2.4,
 	"Br": 1.9,
 	"C": 1.7,
@@ -31,7 +29,10 @@ vdwRadii = {
 	"F": 1.5,
 	"Ga": 1.9,
 	"H": 1.4,
-	"N": 1.6
+	"N": 1.6,
+	"I": 2.1,
+	"P": 1.9,
+	"S": 1.8
 
 
 
@@ -264,7 +265,7 @@ def createDict(atom):
 
 #Main-code. Calculates the distances between a selected ligand and all atoms within a given cutoff of a given .pdb-code.^
 # call it like StructureAnalyzer("6hn0", "DIF", 5, True)
-def StructureAnalyzer(pdbCode = "6hn0", ligandCode = "DIF", inputString = "* 3.7 *", ignoreH2O = False): 
+def StructureAnalyzer(pdbCode = "6hn0", ligandCode = "DIF", inputString = "* 1*vdw *", ignoreH2O = False): 
 
 	condition = analyzeInput(inputString)
 	# cutoff = condition[1]

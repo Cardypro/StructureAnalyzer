@@ -45,8 +45,18 @@ The PDB-code is the four - letter - figure - code given by the [PDB](https://www
 The ligand code is the three - letter - figure - code given by the [PDB](https://www.rcsb.org/) specifying the ligand you want to investigate. If there are more than one protein-ligand-interactions (e.g. because there are more than one molecule of Ligand in the structure) the program will select the innermost ligand. This ensures that there are no interactions ignored because of missing information (no ligands on the edge of your structure are selected because some interactions may be missing in the file). **This selection is sensitive to the geometry, not to the mass corrected centre (centre of geometry is used instead of centre of mass).**
 
 ### condition (String containing three statements separated by whitespaces)
-The condition determines which interactions are depicted. **It always insists of three statements separated by whitespaces**. The first and the third statement determines which elements are allowed on the ligand side and the pocket/protein side repectively. Multiple elements can be allowed by separating them with a "|" (pipe). "\*" means "all elements".
-The middle statement determines the cutoff. There are two ways to use this. First, you can just type a float representing a constant cutoff for interactions. The second way is to determine the cutoff on a dynamical way. therefore the [van-der-Waals-radii](https://en.wikipedia.org/wiki/Van_der_Waals_radius) are used. The vdw-radii are currently obtained from [1]. The cutoff is then calculated as the sum of the [van-der-Waals-radii](https://en.wikipedia.org/wiki/Van_der_Waals_radius) of the interacting elements (multiplied by an optional factor). If one of the investigated elements is bond to an hydrogen atom, the cutoff is extended by the diameter of the hydrogen atom to take possible [hydrogen bonds](https://en.wikipedia.org/wiki/Hydrogen_bond) into account. C-H-\* hydrogen bonds are ignored. To use the second way your second statement must be something like "factor\*vdw".
+The condition determines which interactions are depicted. **It always insists of three statements separated by whitespaces**.
+
+The first and the third statement determines which elements are allowed on the ligand side and the pocket/protein side repectively. Multiple elements can be allowed by separating them with a "|" (pipe). "\*" means "all elements".
+
+---
+
+The middle statement determines the cutoff. There are two ways to use this. First, you can just type a float representing a constant cutoff for interactions. 
+
+The second way is to determine the cutoff on a dynamical way. Therefore the [van-der-Waals-radii](https://en.wikipedia.org/wiki/Van_der_Waals_radius) are used. The vdw-radii are currently obtained from [1]. The cutoff is then calculated as the sum of the [van-der-Waals-radii](https://en.wikipedia.org/wiki/Van_der_Waals_radius) of the interacting elements (multiplied by an optional factor). If one of the investigated elements is bond to an hydrogen atom, the cutoff is extended by the diameter of the hydrogen atom to take possible [hydrogen bonds](https://en.wikipedia.org/wiki/Hydrogen_bond) into account. C-H-\* hydrogen bonds are ignored. To use the second way your second statement must be something like "factor\*vdw".
+
+---
+
 The cutoff is calculated by using simple 3D geometry (Pythagorean theorem). **The program does not evaluate whether the found interactions make sense in a chemical view.** The default condition is "\* 1\*vdw \*", analyzing all atoms within a cutoff of the sum of the vdw-radii.
 
 ### ignoreH2O (boolean)

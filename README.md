@@ -47,7 +47,26 @@ The ligand code is the three - letter - figure - code given by the [PDB](https:/
 ### condition (String containing three statements separated by whitespaces)
 The condition determines which interactions are depicted. **It always insists of three statements separated by whitespaces**.
 
-The first and the third statement determines which elements are allowed on the ligand side and the pocket/protein side repectively. Multiple elements can be allowed by separating them with a "|" (pipe). "\*" means "all elements".
+The first and the third statement determines which elements are allowed on the ligand side and the pocket/protein side repectively. Multiple elements can be allowed by separating them with a "|" (pipe). "\*" means "all elements". The currently supported elements can be found below.
+
+	"Ag": 1.7,
+	"Ar": 1.9,
+	"As": 2.0,
+	"Au": 1.7,
+	"Bi": 2.4,
+	"Br": 1.9,
+	"C": 1.7,
+	"Cd": 1.6,
+	"Cl": 1.8,
+	"Cu": 1.4,
+	"O": 1.5,
+	"F": 1.5,
+	"Ga": 1.9,
+	"H": 1.4,
+	"N": 1.6,
+	"I": 2.1,
+	"P": 1.9,
+	"S": 1.8
 
 ---
 

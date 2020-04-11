@@ -25,12 +25,12 @@ After downloading StructureAnalyzer open Anaconda Prompt, navigate to the path w
 > pymol StructureAnalyzer_clean.py
 
 Pymol should start now. Type 
-> StructureAnalyzer("PDB-code", "Ligand code", cutoff)
+> StructureAnalyzer("PDB-code", "Ligand code", "condition", ignoreH2O)
 
 e.g.
-> StructureAnalyzer("6hn0", "DIF", 3.8)
+> StructureAnalyzer("6hn0", "DIF", "N 1.1\*vdw O|N", True)
 
-to analyze the interactions of the PDB entry named [6HN0](https://www.rcsb.org/structure/6hn0) with Diclofenac within a cutoff range of 3.8 angstrom around the Diclofenac.
+to analyze the interactions of the PDB entry named [6HN0](https://www.rcsb.org/structure/6hn0) with Diclofenac within a cutoff range 1.1 times of the van-der-Waals distance around the Diclofenac. It's also restricted to ligands-Nitrogen and pocket Oxygen or Nitrogen.
 
 The produced .mrv-file can be found in the /Output directory. You can open the file using MarvinSketch. The interactions are represented by orange lines by default. The names of the residues are connected to the corresponding residue by a thin grey line so you can easily rearange them in a aesthetical way.
 
@@ -44,13 +44,15 @@ The PDB-code is the four - letter - figure - code given by the [PDB](https://www
 ### Ligand code* (string)
 The ligand code is the three - letter - figure - code given by the [PDB](https://www.rcsb.org/) specifying the ligand you want to investigate. If there are more than one protein-ligand-interactions (e.g. because there are more than one molecule of Ligand in the structure) the program will select the innermost ligand. This ensures that there are no interactions ignored because of missing information (no ligands on the edge of your structure are selected because some interactions may be missing in the file). **This selection is sensitive to the geometry, not to the mass corrected centre (centre of geometry is used instead of centre of mass).**
 
-### cutoff (float)
-The cutoff is calculated by using simple 3D geometry (Pythagorean theorem). **The program does not evaluate whether the found interactions make sense in a chemical view.** The standard value is 3.7 A.
+### condition (String containing three statements separated by whitespaces)
+The condition determines which interactions are depicted. **It always insists of three statements separated by whitespaces**. The first and the third statement determines which elements are allowed on the ligand side and the pocket/protein side repectively. Multiple elements can be allowed by separating them with a "|" (pipe). "\*" means "all elements".
+The middle statement determines the cutoff. There are two ways to use this. First, you can just type a float representing a constant cutoff for interactions. The second way is to determine the cutoff on a dynamical way. therefore the [van-der-Waals-radii](https://en.wikipedia.org/wiki/Van_der_Waals_radius) are used. The vdw-radii are currently obtained from [1]. The cutoff is then calculated as the sum of the [van-der-Waals-radii](https://en.wikipedia.org/wiki/Van_der_Waals_radius) of the interacting elements (multiplied by an optional factor). If one of the investigated elements is bond to an hydrogen atom, the cutoff is extended by the diameter of the hydrogen atom to take possible [hydrogen bonds](https://en.wikipedia.org/wiki/Hydrogen_bond) into account. C-H-\* hydrogen bonds are ignored. To use the second way your second statement must be something like "factor\*vdw".
+The cutoff is calculated by using simple 3D geometry (Pythagorean theorem). **The program does not evaluate whether the found interactions make sense in a chemical view.** The default condition is "\* 1\*vdw \*", analyzing all atoms within a cutoff of the sum of the vdw-radii.
 
 ### ignoreH2O (boolean)
 This decides whether to ignore water molecules or not. The default value is False so water molecules are depicted.
 
-### multipleAnalyzer (array of PDB-codes, Ligand code, cutoff, ignoreH2O)
+### multipleAnalyzer (array of PDB-codes, Ligand code, condition, ignoreH2O)
 Instead of using the StructureAnalyzer command you can use the multipleAnalyzer. This allows you to analyze more than one pdb-code at once. It works similar to the StructureAnalyzer except it takes an array of strings containing the protein codes to be analyzed.
 
 ## Troubleshooting
@@ -70,7 +72,7 @@ This program uses [pysmiles](https://pypi.org/project/pysmiles/) writen by Peter
 - In future versions there should be some more aesthetic options like different colours for different types of interactions.
 
 ## References
-
+[1]  A. F. Holleman, E. Wiberg, N. Wiberg: Lehrbuch der Anorganischen Chemie. 103. Auflage. Walter de Gruyter, Berlin **2009**.
  - The PyMOL Molecular Graphics System, Version 2.0 Schrödinger, LLC. 
  - P. C. Kroon, pySmiles v1.0.0 (2018), https://github.com/pckroon/pysmiles.
  

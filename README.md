@@ -48,27 +48,54 @@ The ligand code is the three - letter - figure - code given by the [PDB](https:/
 The condition determines which interactions are depicted. **It always insists of three statements separated by whitespaces**.
 
 The first and the third statement determines which elements are allowed on the ligand side and the pocket/protein side repectively. Multiple elements can be allowed by separating them with a "|" (pipe). "\*" means "all elements". The currently supported elements can be found below.
-
-	"Ag": 1.7,
-	"Ar": 1.9,
-	"As": 2.0,
-	"Au": 1.7,
-	"Bi": 2.4,
-	"Br": 1.9,
-	"C": 1.7,
-	"Cd": 1.6,
-	"Cl": 1.8,
-	"Cu": 1.4,
-	"O": 1.5,
-	"F": 1.5,
-	"Ga": 1.9,
-	"H": 1.4,
-	"N": 1.6,
-	"I": 2.1,
-	"P": 1.9,
-	"S": 1.8
-
----
+<details>
+	<summary>van der Waals radii</summary>
+	
+	"H": 1.10,
+	"Li": 1.81,
+	"Na": 2.27,
+	"K": 2.75,
+	"Rb": 3.03,
+	"Cs": 3.43,
+	"Fr": 3.48, 	#End I
+	"Be": 1.53,
+	"Mg": 1.73,
+	"Ca": 2.31,
+	"Sr": 2.49,
+	"Ba": 2.68,
+	"Ra": 2.83, 	#End II
+	"B": 1.92,
+	"Al": 1.84,
+	"Ga": 1.87,
+	"In": 1.93,
+	"Tl": 1.96, 	#End III
+	"C": 1.70,
+	"Si": 2.10,
+	"Ge": 2.11,
+	"Sn": 2.17,
+	"Pb": 2.02,	#End IV
+	"N": 1.55,
+	"P": 1.80,
+	"As": 1.85,
+	"Sb": 2.06,
+	"Bi": 2.07,	#End V
+	"O": 1.52,	
+	"S": 1.80,
+	"Se": 1.90,
+	"Te": 2.06,
+	"Po": 1.97, 	#End VI
+	"F": 1.47,
+	"Cl": 1.75,
+	"Br": 1.83,
+	"I": 1.98,
+	"At": 2.02, 	#End VII
+	"He": 1.40,
+	"Ne": 1.54,
+	"Ar": 1.88,
+	"Kr": 2.02,
+	"Xe": 2.16,
+	"Rn":2.20 	#End Main Group
+</details>
 
 The middle statement determines the cutoff. There are two ways to use this. First, you can just type a float representing a constant cutoff for interactions. 
 
@@ -101,7 +128,7 @@ This program uses [pysmiles](https://pypi.org/project/pysmiles/) writen by Peter
 - In future versions there should be some more aesthetic options like different colours for different types of interactions.
 
 ## References
-[1]  A. F. Holleman, E. Wiberg, N. Wiberg: Lehrbuch der Anorganischen Chemie. 103. Auflage. Walter de Gruyter, Berlin **2009**.
+[1]  M. Mantina, A. C. Chamberlin, R. Valero, C. J. Cramer, D. G. Truhlar, *J. Phys. Chem. A* **2009**, 113, 5806, doi: 10.1021/jp8111556.
  - The PyMOL Molecular Graphics System, Version 2.0 Schrödinger, LLC. 
  - P. C. Kroon, pySmiles v1.0.0 (2018), https://github.com/pckroon/pysmiles.
  

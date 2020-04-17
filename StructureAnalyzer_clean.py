@@ -9,33 +9,57 @@ import pysmiles as ps
 def multipleAnalyzer(pdbArray, ligand, inputString = "* 1*vdw *", ignoreH2O = False):
 
 	for code in pdbArray:
-		print("start " + str(code))
-		StructureAnalyzer(code, ligand, inputString, ignoreH2O)
 		cmd.reinitialize()
+		print("\n start " + str(code))
+		StructureAnalyzer(code, ligand, inputString, ignoreH2O)
+		
 
 
 vdwRadii = {
-	"Ag": 1.7,
-	"Ar": 1.9,
-	"As": 2.0,
-	"Au": 1.7,
-	"Bi": 2.4,
-	"Br": 1.9,
-	"C": 1.7,
-	"Cd": 1.6,
-	"Cl": 1.8,
-	"Cu": 1.4,
-	"O": 1.5,
-	"F": 1.5,
-	"Ga": 1.9,
-	"H": 1.4,
-	"N": 1.6,
-	"I": 2.1,
-	"P": 1.9,
-	"S": 1.8
-
-
-
+	"H": 1.10,
+	"Li": 1.81,
+	"Na": 2.27,
+	"K": 2.75,
+	"Rb": 3.03,
+	"Cs": 3.43,
+	"Fr": 3.48, #End I
+	"Be": 1.53,
+	"Mg": 1.73,
+	"Ca": 2.31,
+	"Sr": 2.49,
+	"Ba": 2.68,
+	"Ra": 2.83, #End II
+	"B": 1.92,
+	"Al": 1.84,
+	"Ga": 1.87,
+	"In": 1.93,
+	"Tl": 1.96, #End III
+	"C": 1.70,
+	"Si": 2.10,
+	"Ge": 2.11,
+	"Sn": 2.17,
+	"Pb": 2.02,	#End IV
+	"N": 1.55,
+	"P": 1.80,
+	"As": 1.85,
+	"Sb": 2.06,
+	"Bi": 2.07,	#End V
+	"O": 1.52,	
+	"S": 1.80,
+	"Se": 1.90,
+	"Te": 2.06,
+	"Po": 1.97, #End VI
+	"F": 1.47,
+	"Cl": 1.75,
+	"Br": 1.83,
+	"I": 1.98,
+	"At": 2.02, #End VII
+	"He": 1.40,
+	"Ne": 1.54,
+	"Ar": 1.88,
+	"Kr": 2.02,
+	"Xe": 2.16,
+	"Rn":2.20 #End Main Group
 }
 
 def getCutoff(Array): #[Atom1, ['1.2','vdw'], Atom2]
@@ -44,8 +68,10 @@ def getCutoff(Array): #[Atom1, ['1.2','vdw'], Atom2]
 	try:
 		vdwCutoff = (vdwRadii[Array[0].element] + vdwRadii[Array[2].element]) * float(Array[1][0])
 
-		if (Array[0].hasH or Array[2].hasH) and Array[0].element != "C" and Array[2].element != "C": # if there is a H on a hetero atom, the cutoff is extended by the diameter of a H
-			vdwCutoff += vdwRadii["H"]*2
+		# there are some issues calculating H-bonds, so this is currently not used
+
+		# if (Array[0].hasH or Array[2].hasH) and Array[0].element != "C" and Array[2].element != "C": # if there is a H on a hetero atom, the cutoff is extended by the diameter of a H
+		# 	vdwCutoff += vdwRadii["H"]*2
 	
 	except:
 		print("Error: unable to evaluate vdwRadii for " + Array[0].element + " and/or " + Array[2].element)
@@ -353,26 +379,34 @@ else:
 	#reads all informations belonging to the selected binding pocket and ligand
 	cmd.iterate_state(1,stored.ligandSelectionName, "stored.atomsLig.append(Atom(x, y, z, model, chain, resn, resi, name, elem))")
 
-	cmd.h_add()
+####### currently not needed. determines if a Atom
 
-	for atoms in stored.atomsLig:
-		stored.hasH = False
-		cmd.select("neighbors", "neighbor " + atoms.identifierString)
-		cmd.iterate_state(1,"neighbors","""if elem =="H":
-		stored.hasH = True""")
-		atoms.hasH = stored.hasH
+	# cmd.h_add()
 
-	cmd.remove("hydro")
+
+
+	# for atoms in stored.atomsLig:
+	# 	stored.hasH = False
+	# 	cmd.select("neighbors", "neighbor " + atoms.identifierString)
+	# 	cmd.iterate_state(1,"neighbors","""if elem =="H":
+	# 	stored.hasH = True""")
+	# 	atoms.hasH = stored.hasH
+
+	# cmd.remove("hydro")
 	cmd.iterate_state(1, 'pocket', "stored.atomsPocket.append(Atom(x, y, z, model, chain, resn, resi, name, elem))")
 
-	cmd.h_add()
+
+
+	# cmd.h_add()
 	
-	for atoms in stored.atomsPocket:
-		stored.hasH = False
-		cmd.select("neighbors", "neighbor " + atoms.identifierString)
-		cmd.iterate_state(1,"neighbors","""if elem =="H":
-		stored.hasH = True""")
-		atoms.hasH = stored.hasH
+	# for atoms in stored.atomsPocket:
+	# 	stored.hasH = False
+	# 	cmd.select("neighbors", "neighbor " + atoms.identifierString)
+	# 	cmd.iterate_state(1,"neighbors","""if elem =="H":
+	# 	stored.hasH = True""")
+	# 	atoms.hasH = stored.hasH
+
+########
 
 	cmd.remove("hydro")
 

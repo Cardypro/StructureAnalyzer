@@ -118,8 +118,8 @@ The cutoff is calculated by using simple 3D geometry (Pythagorean theorem). **Th
 This decides whether to ignore water molecules or not. The default value is False so water molecules are depicted.
 
 ### multipleAnalyzer (array of PDB-codes, Ligand code, condition, ignoreH2O)
-
-Instead of using the StructureAnalyzer command you can use the multipleAnalyzer. This allows you to analyze more than one pdb-code at once. It works similar to the StructureAnalyzer except it takes an array of strings containing the protein codes to be analyzed.
+Instead of using the StructureAnalyzer command you can use the multipleAnalyzer. This allows you to analyze more than one pdb-code at once. It works similar to the StructureAnalyzer except it takes an array of strings containing the protein codes to be analyzed.  
+E.g. multipleAnalyzer(\["6hno","6hn1"\], "DIF")
 
 ## Troubleshooting
 

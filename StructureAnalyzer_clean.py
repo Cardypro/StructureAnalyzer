@@ -1,18 +1,8 @@
-from pymol import cmd, stored, sys
+from pymol import cmd, stored
 import math
-import re
 import os
 import networkx as nx
 import pysmiles as ps
-
-
-def multipleAnalyzer(pdbArray, ligand, inputString="* 1*vdw *", ignoreH2O=False):
-
-    for code in pdbArray:
-        cmd.reinitialize()
-        print("\n start " + str(code))
-        StructureAnalyzer(code, ligand, inputString, ignoreH2O)
-
 
 vdwRadii = {
     "H": 1.10,
@@ -62,30 +52,11 @@ vdwRadii = {
 }
 
 
-def getCutoff(Array):  # [Atom1, ['factor','vdw'], Atom2]
-    vdwCutoff = 0
-
-    try:
-        vdwCutoff = (vdwRadii[Array[0].element] +
-                     vdwRadii[Array[2].element]) * float(Array[1][0])
-
-        # there are some issues calculating H-bonds, so this is currently not used
-
-        # if (Array[0].hasH or Array[2].hasH) and Array[0].element != "C" and Array[2].element != "C": # if there is a H on a hetero atom, the cutoff is extended by the diameter of a H
-        # 	vdwCutoff += vdwRadii["H"]*2
-
-    except:
-        print("Error: unable to evaluate vdwRadii for " +
-              Array[0].element + " and/or " + Array[2].element)
-    return vdwCutoff
-
-
 class Interaction:
     def __init__(self, atomA, atomB, distance):
         self.atomA = atomA
         self.atomB = atomB
         self.dist = distance
-        self.type = "default"
 
 
 class Atom:
@@ -97,15 +68,39 @@ class Atom:
         self.model = model  # which protein, e.g. 6hn0
         self.chain = chain  # which sidechain, e.g. A
         self.resn = resn  # name of residue, e.g. DIF
-        self.resi = resi  # Identifier of residue, e.g. 607
-        self.name = name  # Name of Atom, e.g. CL4
-        self.element = element[0] + element[1:].lower()  # Element, e.g. Cl
+        self.resi = resi  # identifier of residue, e.g. 607
+        self.name = name  # name of atom, e.g. CL4
+        self.element = element[0] + element[1:].lower()  # element, e.g. Cl
         self.identifierString = model + "//" + \
             chain + "/" + resn + "`" + resi + "/" + name
-        self.hasH = False
 
-    def create(self, x=0, y=0, z=0, model="none", chain="none", resn="none", resi="none", name="none", element="none"):
-        return Atom(x, y, z, model, chain, resn, resi, name, element)
+
+def calcDist(pos1, pos2):  # calculates the 3D-distance of two given coordinates
+    x1 = pos1[0]
+    y1 = pos1[1]
+    z1 = pos1[2]
+
+    x2 = pos2[0]
+    y2 = pos2[1]
+    z2 = pos2[2]
+
+    dist = math.sqrt((x2-x1)**2 + (y2-y1)**2 + (z2-z1)**2)
+    return dist
+
+
+def calcCog(selection):  # calculates the center of geometry of a given PyMOL selection
+    stored.cogX = 0
+    stored.cogY = 0
+    stored.cogZ = 0
+    stored.i = 1
+    cmd.iterate_state(-1, selection, """\
+if(True):
+	stored.cogX += x
+	stored.cogY += y
+	stored.cogZ += z
+	stored.i += 1
+""")
+    return(stored.cogX/stored.i, stored.cogY/stored.i, stored.cogZ/stored.i)
 
 
 def analyzeInput(inputString):  # splits the input string so it can be read
@@ -114,6 +109,19 @@ def analyzeInput(inputString):  # splits the input string so it can be read
     length = input[1].split("*")
     inputB = input[2].split("|")
     return [inputA, length, inputB]
+
+
+def getCutoff(array):  # array is like [Atom1, ['factor','vdw'], Atom2]
+    vdwCutoff = 0
+
+    try:
+        vdwCutoff = (vdwRadii[array[0].element] +
+                     vdwRadii[array[2].element]) * float(array[1][0])
+
+    except:
+        print("Error: unable to evaluate vdwRadii for " +
+              array[0].element + " and/or " + array[2].element)
+    return vdwCutoff
 
 
 def buildGraph(atomlist):  # turns the given molecule (list of atoms) into a network graph
@@ -128,7 +136,7 @@ def buildGraph(atomlist):  # turns the given molecule (list of atoms) into a net
         cmd.select("nextAtomsSelection", "neighbor " +
                    currentNode.identifierString)
         stored.currentResn = currentNode.resn
-        cmd.iterate_state(1, "nextAtomsSelection", """if resn == stored.currentResn:
+        cmd.iterate_state(-1, "nextAtomsSelection", """if resn == stored.currentResn:
 	stored.helpArray.append(Atom(x, y, z, model, chain, resn, resi, name, elem))""")
 
         graph.add_node(currentNode.identifierString,
@@ -146,7 +154,7 @@ def buildGraph(atomlist):  # turns the given molecule (list of atoms) into a net
     return graph
 
 
-# writes a -mrv-file (XML format) that can be opened with e.g. Marvinsketch
+# writes a .mrv-file (XML format) that can be opened with e.g. Marvinsketch
 def writeXML(graph, interactionList, pdbCode):
 
     # creates an output folder
@@ -240,71 +248,7 @@ def writeXML(graph, interactionList, pdbCode):
     file.write("</MDocument>")
 
 
-def calcDist(pos1, pos2):  # calculates the 3D-distance of two given coordinates
-    dist = 0
-
-    x1 = pos1[0]
-    y1 = pos1[1]
-    z1 = pos1[2]
-
-    x2 = pos2[0]
-    y2 = pos2[1]
-    z2 = pos2[2]
-
-    dist = math.sqrt((x2-x1)**2 + (y2-y1)**2 + (z2-z1)**2)
-    return dist
-
-
-def calcCog(selection):  # calculates the center of geometry of a given PyMOL selection
-    stored.cogX = 0
-    stored.cogY = 0
-    stored.cogZ = 0
-    stored.i = 1
-    cmd.iterate_state(1, selection, """\
-if(True):
-	stored.cogX += x
-	stored.cogY += y
-	stored.cogZ += z
-	stored.i += 1
-""")
-    return(stored.cogX/stored.i, stored.cogY/stored.i, stored.cogZ/stored.i)
-
-
-# TODO: should be obsolete
-
-# writes the type of an element to a dict and creates a new entry, if the element doesn't already exist
-def writeToDict(dictionary, element):
-    if element in dictionary:
-        dictionary[element] += 1
-    else:
-        dictionary[element] = 1
-
-
-def createDict(atom):
-    """creates an array of dictionaries where the n-th entry represents all atoms with a bond-distance of exact n bonds"""
-
-    cmd.select("lesserSelection", atom.identifierString)
-    dictArray = [{atom.element: 1}]
-
-    while True:
-        stored.helpArray = []
-        cmd.select("higherSelection", "lesserSelection extend 1")
-        cmd.select("currSelection", "higherSelection and not lesserSelection")
-        cmd.iterate_state(1, 'currSelection', "stored.helpArray.append(elem)")
-
-        if len(stored.helpArray) != 0:
-            dictArray.append(dict())
-
-            for element in stored.helpArray:
-                writeToDict(dictArray[-1], element)
-
-            cmd.select("lesserSelection", "higherSelection")
-
-        else:
-            return dictArray
-
-
-# Main-code. Calculates the distances between a selected ligand and all atoms within a given cutoff of a given .pdb-code.
+# Main-code. Calculates the distances between a selected ligand and all atoms within a given cutoff-restriction of a given .pdb-code.
 def StructureAnalyzer(pdbCode="6hn0", ligandCode="DIF", inputString="* 1*vdw *", ignoreH2O=False):
 
     cmd.reinitialize()
@@ -320,8 +264,8 @@ def StructureAnalyzer(pdbCode="6hn0", ligandCode="DIF", inputString="* 1*vdw *",
     stored.oldResi = ""
     stored.AllLigandsRes = []
 
-    # iterates all Atoms belonging  to the given ligand code and splits them up so you have an array of arrays containing positions of atoms
-    cmd.iterate_state(1, "AllLigands", """\
+    # iterates all Atoms belonging to the given ligand code and splits them up so you have an array of arrays containing positions of atoms
+    cmd.iterate_state(-1, "AllLigands", """\
 if(resi == stored.oldResi):
 	stored.AllLigandsPos[(len(stored.AllLigandsPos)-1)].append((x,y,z))
 else:
@@ -389,44 +333,11 @@ else:
     curDist = 0
 
     # reads all informations belonging to the selected binding pocket and ligand
-    cmd.iterate_state(1, stored.ligandSelectionName,
+    cmd.iterate_state(-1, stored.ligandSelectionName,
                       "stored.atomsLig.append(Atom(x, y, z, model, chain, resn, resi, name, elem))")
 
-# currently not needed. determines if an atom is bound to an H
-
-    # cmd.h_add()
-
-    # for atoms in stored.atomsLig:
-    # 	stored.hasH = False
-    # 	cmd.select("neighbors", "neighbor " + atoms.identifierString)
-    # 	cmd.iterate_state(1,"neighbors","""if elem =="H":
-    # 	stored.hasH = True""")
-    # 	atoms.hasH = stored.hasH
-
-    # cmd.remove("hydro")
     cmd.iterate_state(
         1, 'pocket', "stored.atomsPocket.append(Atom(x, y, z, model, chain, resn, resi, name, elem))")
-
-    # cmd.h_add()
-
-    # for atoms in stored.atomsPocket:
-    # 	stored.hasH = False
-    # 	cmd.select("neighbors", "neighbor " + atoms.identifierString)
-    # 	cmd.iterate_state(1,"neighbors","""if elem =="H":
-    # 	stored.hasH = True""")
-    # 	atoms.hasH = stored.hasH
-
-########
-
-    cmd.remove("hydro")
-
-    # #creates an output folder and a tex-file
-    # try:
-    # 	os.mkdir("Output")
-    # except:
-    # 	pass
-    # file = open(("./Output/" + pdbCode + ".tex"), "w")
-    # file.write(re.sub("<pdb>", pdbCode, texFrameworkStart))
 
     interactionList = []
     atomsForGraph = []
@@ -474,3 +385,11 @@ else:
     cmd.remove("hydro")
 
     print("Analyzing " + pdbCode + " finished")
+
+
+def multipleAnalyzer(pdbArray, ligand, inputString="* 1*vdw *", ignoreH2O=False):
+
+    for code in pdbArray:
+        cmd.reinitialize()
+        print("\n start " + str(code))
+        StructureAnalyzer(code, ligand, inputString, ignoreH2O)

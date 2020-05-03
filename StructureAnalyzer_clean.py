@@ -255,54 +255,58 @@ def StructureAnalyzer(pdbCode="6hn0", ligandCode="DIF", inputString="* 1*vdw *",
 
     condition = analyzeInput(inputString)
     AllDistances = []
-    stored.AllLigandsAvgPos = []
+    AllLigandsAvgPos = []
     cmd.fetch(pdbCode)  # downloads given .pdb-file
     cog = calcCog(pdbCode)
 
     cmd.select("AllLigands", "resn " + ligandCode)
-    stored.AllLigandsPos = []
+    stored.AllLigandsAtoms = []
     stored.oldResi = ""
-    stored.AllLigandsRes = []
 
     # iterates all Atoms belonging to the given ligand code and splits them up so you have an array of arrays containing positions of atoms
     cmd.iterate_state(-1, "AllLigands", """\
 if(resi == stored.oldResi):
-	stored.AllLigandsPos[(len(stored.AllLigandsPos)-1)].append((x,y,z))
+	stored.AllLigandsAtoms[(len(stored.AllLigandsAtoms)-1)].append(Atom(x, y, z, model, chain, resn, resi, name, elem))
 else:
 	stored.oldResi = resi
-	stored.AllLigandsPos.append([(x,y,z)])
-	stored.AllLigandsRes.append(resi)
+	stored.AllLigandsAtoms.append([Atom(x, y, z, model, chain, resn, resi, name, elem)])
 """)
 
     # calculates the centre of each ligand and builds an array containing all centres
-    for i in range(len(stored.AllLigandsPos)):
-        stored.sumX = 0
-        stored.sumY = 0
-        stored.sumZ = 0
-        for j in stored.AllLigandsPos[i]:
-            stored.sumX += j[0]
-            stored.sumY += j[1]
-            stored.sumZ += j[2]
-        stored.avgX = stored.sumX/len(stored.AllLigandsPos[i])
-        stored.avgY = stored.sumY/len(stored.AllLigandsPos[i])
-        stored.avgZ = stored.sumZ/len(stored.AllLigandsPos[i])
+    i = 0
+    for ligands in stored.AllLigandsAtoms:
+        sumX = 0
+        sumY = 0
+        sumZ = 0
 
-        stored.avgPos = (stored.avgX, stored.avgY, stored.avgZ)
-        stored.AllLigandsAvgPos.append(stored.avgPos)
+        for atoms in stored.AllLigandsAtoms[i]:
+            sumX += atoms.x
+            sumY += atoms.y
+            sumZ += atoms.z
+
+        avgX = sumX/len(stored.AllLigandsAtoms[i])
+        avgY = sumY/len(stored.AllLigandsAtoms[i])
+        avgZ = sumZ/len(stored.AllLigandsAtoms[i])
+
+        avgPos = (avgX, avgY, avgZ)
+        AllLigandsAvgPos.append(avgPos)
+        i += 1
 
     # some definitions
     minimalDist = 100000
     stored.index = -1
 
     # evaluates the array with the avgPositions to get the Ligand with the least distance to the global cog
-    for i in range(len(stored.AllLigandsAvgPos)):
-        currentDist = calcDist(stored.AllLigandsAvgPos[i], cog)
+    i = 0
+    for pos in AllLigandsAvgPos:
+        currentDist = calcDist(pos, cog)
 
         if minimalDist > currentDist:
             minimalDist = currentDist
-            stored.index = i
+            index = i
+        i += 1
 
-    minimalDist_resi = stored.AllLigandsRes[stored.index]
+    minimalDist_resi = stored.AllLigandsAtoms[index][0].resi
     stored.ligandSelectionName = (
         ligandCode + str(minimalDist_resi))  # e.g. DIFxxx
     print(stored.ligandSelectionName +

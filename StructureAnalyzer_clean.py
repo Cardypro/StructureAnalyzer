@@ -88,19 +88,35 @@ def calcDist(pos1, pos2):  # calculates the 3D-distance of two given coordinates
     return dist
 
 
-def calcCog(selection):  # calculates the center of geometry of a given PyMOL selection
-    stored.cogX = 0
-    stored.cogY = 0
-    stored.cogZ = 0
-    stored.i = 1
-    cmd.iterate_state(-1, selection, """\
+def calcCog(argument):
+    if type(argument) == str:  # calculates the center of geometry of a given PyMOL selection
+        selection = argument
+        stored.cogX, stored.cogY, stored.cogZ = 0, 0, 0
+        stored.i = 1
+
+        cmd.iterate_state(-1, selection, """\
 if(True):
-	stored.cogX += x
-	stored.cogY += y
-	stored.cogZ += z
-	stored.i += 1
+    stored.cogX += x
+    stored.cogY += y
+    stored.cogZ += z
+    stored.i += 1
 """)
-    return(stored.cogX/stored.i, stored.cogY/stored.i, stored.cogZ/stored.i)
+        return(stored.cogX/stored.i, stored.cogY/stored.i, stored.cogZ/stored.i)
+
+    if type(argument) == list:  # calculates the center of geometry of a given Array containing atoms
+
+        sumX, sumY, sumZ = 0, 0, 0
+
+        for entries in argument:
+            sumX += entries.x
+            sumY += entries.y
+            sumZ += entries.z
+
+        avgX = sumX/len(argument)
+        avgY = sumY/len(argument)
+        avgZ = sumZ/len(argument)
+
+        return(avgX, avgY, avgZ)
 
 
 def analyzeInput(inputString):  # splits the input string so it can be read
@@ -121,6 +137,7 @@ def getCutoff(array):  # array is like [Atom1, ['factor','vdw'], Atom2]
     except:
         print("Error: unable to evaluate vdwRadii for " +
               array[0].element + " and/or " + array[2].element)
+
     return vdwCutoff
 
 
@@ -129,20 +146,24 @@ def buildGraph(atomlist):  # turns the given molecule (list of atoms) into a net
     queue = atomlist
     graph = nx.Graph()
     cmd.h_add()
+    i = 0
 
     while len(queue) != 0:
-        stored.helpArray = []
+        i += 1
+        stored.currNeighbor = []
         currentNode = queue.pop(-1)
-        cmd.select("nextAtomsSelection", "neighbor " +
+        cmd.select("neighborSelection", "neighbor " +
                    currentNode.identifierString)
         stored.currentResn = currentNode.resn
-        cmd.iterate_state(-1, "nextAtomsSelection", """if resn == stored.currentResn:
-	stored.helpArray.append(Atom(x, y, z, model, chain, resn, resi, name, elem))""")
+        cmd.iterate_state(-1, "neighborSelection", """\
+if resn == stored.currentResn:
+	stored.currNeighbor.append(Atom(x, y, z, model, chain, resn, resi, name, elem))
+""")
 
         graph.add_node(currentNode.identifierString,
                        element=currentNode.element, charge=0)
 
-        for atom in stored.helpArray:
+        for atom in stored.currNeighbor:
             graph.add_edge(currentNode.identifierString, atom.identifierString)
             if atom.identifierString not in visitedAtoms:
                 visitedAtoms.append(atom.identifierString)
@@ -150,7 +171,8 @@ def buildGraph(atomlist):  # turns the given molecule (list of atoms) into a net
 
     ps.fill_valence(graph, respect_hcount=True, respect_bond_order=False)
 
-    smiles = ps.write_smiles(graph)
+
+    cmd.remove("hydro")
     return graph
 
 
@@ -168,10 +190,10 @@ def writeXML(graph, interactionList, pdbCode):
 
     dictionary = dict()
 
+    # all atoms
     file.write("<atomArray>\n")
     i = 1
 
-    # all atoms
     for node in list(graph.nodes(data=True)):
         if node[1]["element"] != "H":
             file.write("<atom id=\"a" + str(i) + "\" elementType=\"" +
@@ -180,9 +202,9 @@ def writeXML(graph, interactionList, pdbCode):
             i += 1
 
     file.write("</atomArray>\n")
-    file.write("<bondArray>\n")
 
     # all bonds
+    file.write("<bondArray>\n")
     for edge in graph.edges.data():
         if graph.nodes[edge[1]]["element"] != "H" and graph.nodes[edge[0]]["element"] != "H":
             file.write("<bond atomRefs2=\"a" + str(dictionary[edge[0]]) + " a" + str(
@@ -248,150 +270,108 @@ def writeXML(graph, interactionList, pdbCode):
     file.write("</MDocument>")
 
 
+
 # Main-code. Calculates the distances between a selected ligand and all atoms within a given cutoff-restriction of a given .pdb-code.
 def StructureAnalyzer(pdbCode="6hn0", ligandCode="DIF", inputString="* 1*vdw *", ignoreH2O=False):
 
     cmd.reinitialize()
 
     condition = analyzeInput(inputString)
-    AllDistances = []
-    AllLigandsAvgPos = []
+    allDistances = []
+    allLigandsAvgPos = []
     cmd.fetch(pdbCode)  # downloads given .pdb-file
-    cog = calcCog(pdbCode)
+    globalCog = calcCog(pdbCode)
 
-    cmd.select("AllLigands", "resn " + ligandCode)
-    stored.AllLigandsAtoms = []
+    cmd.select("allLigands", "resn " + ligandCode)
+    stored.allLigandsAtoms = []
     stored.oldResi = ""
 
     # iterates all Atoms belonging to the given ligand code and splits them up so you have an array of arrays containing positions of atoms
-    cmd.iterate_state(-1, "AllLigands", """\
+    cmd.iterate_state(-1, "allLigands", """\
 if(resi == stored.oldResi):
-	stored.AllLigandsAtoms[(len(stored.AllLigandsAtoms)-1)].append(Atom(x, y, z, model, chain, resn, resi, name, elem))
+	stored.allLigandsAtoms[(len(stored.allLigandsAtoms)-1)].append(Atom(x, y, z, model, chain, resn, resi, name, elem))
 else:
 	stored.oldResi = resi
-	stored.AllLigandsAtoms.append([Atom(x, y, z, model, chain, resn, resi, name, elem)])
+	stored.allLigandsAtoms.append([Atom(x, y, z, model, chain, resn, resi, name, elem)])
 """)
 
-    # calculates the centre of each ligand and builds an array containing all centres
-    i = 0
-    for ligands in stored.AllLigandsAtoms:
-        sumX = 0
-        sumY = 0
-        sumZ = 0
-
-        for atoms in stored.AllLigandsAtoms[i]:
-            sumX += atoms.x
-            sumY += atoms.y
-            sumZ += atoms.z
-
-        avgX = sumX/len(stored.AllLigandsAtoms[i])
-        avgY = sumY/len(stored.AllLigandsAtoms[i])
-        avgZ = sumZ/len(stored.AllLigandsAtoms[i])
-
-        avgPos = (avgX, avgY, avgZ)
-        AllLigandsAvgPos.append(avgPos)
-        i += 1
-
-    # some definitions
+    # gets the ligand with the least distance to the global cog
     minimalDist = 100000
-    stored.index = -1
+    minimalDistAtoms = []
 
-    # evaluates the array with the avgPositions to get the Ligand with the least distance to the global cog
-    i = 0
-    for pos in AllLigandsAvgPos:
-        currentDist = calcDist(pos, cog)
+    for ligands in stored.allLigandsAtoms:
+        currentCog = calcCog(ligands)
+        currentDist = calcDist(currentCog, globalCog)
 
         if minimalDist > currentDist:
             minimalDist = currentDist
-            index = i
-        i += 1
+            minimalDistResi = ligands[0].resi
+            minimalDistAtoms = ligands
 
-    minimalDist_resi = stored.AllLigandsAtoms[index][0].resi
-    stored.ligandSelectionName = (
-        ligandCode + str(minimalDist_resi))  # e.g. DIFxxx
-    print(stored.ligandSelectionName +
-          " seems to have the smallest distance to the COG")
+    ligandSelectionName = (ligandCode + str(minimalDistResi))  # e.g. DIFxxx
+    print(ligandSelectionName + " has the smallest distance to the COG")
 
-    # prepare drawing
+    # drawing pocket and ligand
     cmd.hide('all')
-    cmd.select(stored.ligandSelectionName, ligandCode +
-               "`" + str(minimalDist_resi) + "/")
-    cmd.select('helpselection', 'br. all within ' +
-               (str(8)) + ' of ' + stored.ligandSelectionName)
-    cmd.select('pocket', 'helpselection and not ' + stored.ligandSelectionName)
+    cmd.select(ligandSelectionName, ligandCode +
+               "`" + str(minimalDistResi) + "/")
+    cmd.select('view', 'br. all within ' + (str(8)) +
+               ' of ' + ligandSelectionName)
+    cmd.select('pocket', 'view and not ' + ligandSelectionName)
 
-    print('select binding pocket')
     cmd.show('sticks', 'pocket')
-    cmd.show('sticks', stored.ligandSelectionName)
+    cmd.show('sticks', ligandSelectionName)
     cmd.util.cbaw('pocket')
-    cmd.util.cbao(stored.ligandSelectionName)
-    cmd.remove("hydro")
-
-    print(str(cmd.count_atoms(stored.ligandSelectionName)) +
-          " atoms have been selected as Ligand / " + ligandCode)
+    cmd.util.cbao(ligandSelectionName)
 
     # preparations
-    stored.atomsLig = []  # All atoms of the Ligand
-    stored.atomsPocket = []  # All Atoms of the Pocket
-    distances = []  # All distances smaller than the cutoff
-    curDist = 0
+    stored.atomsPocket = []  # all Atoms of the Pocket
+    currDist = 0
 
-    # reads all informations belonging to the selected binding pocket and ligand
-    cmd.iterate_state(-1, stored.ligandSelectionName,
-                      "stored.atomsLig.append(Atom(x, y, z, model, chain, resn, resi, name, elem))")
-
-    cmd.iterate_state(
-        1, 'pocket', "stored.atomsPocket.append(Atom(x, y, z, model, chain, resn, resi, name, elem))")
+    # reads all informations belonging to the selected binding pocket
+    cmd.iterate_state(-1, 'pocket',
+                      "stored.atomsPocket.append(Atom(x, y, z, model, chain, resn, resi, name, elem))")
 
     interactionList = []
     atomsForGraph = []
 
-    # main-main-code: calculates the distances of each atom belonging to the pocket to each atom belonging to the ligand. If the distance is less than te cutoff  the distance is named by the iteration-IDs and drawn
-    for ligandAtoms in stored.atomsLig:
+    # main-main-code: calculates the distances of each atom belonging to the pocket to each atom belonging to the ligand. If the distance is less than the cutoff the distance is drawn
+    for ligandAtoms in minimalDistAtoms:
         atomsForGraph.append(ligandAtoms)
 
-        for pocketAtoms in stored.atomsPocket:
-            if (pocketAtoms.resn == "HOH" or ligandAtoms.resn == "HOH") and ignoreH2O:
-                continue
+        if (ligandAtoms.element in condition[0] or "*" in condition[0]):
 
-            curDist = calcDist(ligandAtoms.pos, pocketAtoms.pos)
-            condition = analyzeInput(inputString)
+            for pocketAtoms in stored.atomsPocket:
+                if (pocketAtoms.resn == "HOH") and ignoreH2O:
+                    continue
 
-            if (ligandAtoms.element in condition[0] or "*" in condition[0]) and (pocketAtoms.element in condition[2] or "*" in condition[2]):
+                currDist = calcDist(ligandAtoms.pos, pocketAtoms.pos)
 
-                if "vdw" in condition[1]:
-                    cutoff = getCutoff(
-                        [ligandAtoms, condition[1], pocketAtoms])
-                else:
-                    cutoff = float(condition[1][0])
+                if (pocketAtoms.element in condition[2] or "*" in condition[2]):
 
-                if curDist <= cutoff:
+                    if "vdw" in condition[1]:
+                        cutoff = getCutoff(
+                            [ligandAtoms, condition[1], pocketAtoms])
+                    else:
+                        cutoff = float(condition[1][0])
 
-                    distances.append(
-                        (ligandAtoms.pos, pocketAtoms.pos, curDist))
+                    if currDist <= cutoff:
 
-                    dist_obj = cmd.distance(("distance"),
-                                            ligandAtoms.identifierString,
-                                            pocketAtoms.identifierString,
-                                            cutoff
-                                            )
-                    cmd.color("cyan", "distance")
+                        cmd.distance(
+                            ("distance"), ligandAtoms.identifierString, pocketAtoms.identifierString, cutoff)
+                        cmd.color("cyan", "distance")
 
-                    interactionList.append(Interaction(
-                        ligandAtoms, pocketAtoms, curDist))
-                    #interactionList.append((ligandAtoms, pocketAtoms, curDist))
+                        interactionList.append(Interaction(
+                            ligandAtoms, pocketAtoms, currDist))
+                        atomsForGraph.append(pocketAtoms)
 
-                    atomsForGraph.append(pocketAtoms)
-
-    cmd.h_add()
     currGraph = buildGraph(atomsForGraph)
     writeXML(currGraph, interactionList, pdbCode)
-    cmd.remove("hydro")
 
     print("Analyzing " + pdbCode + " finished")
 
 
-def multipleAnalyzer(pdbArray, ligand, inputString="* 1*vdw *", ignoreH2O=False):
+def multipleAnalyzer(pdbArray, ligand="DIF", inputString="* 1*vdw *", ignoreH2O=False):
 
     for code in pdbArray:
         cmd.reinitialize()

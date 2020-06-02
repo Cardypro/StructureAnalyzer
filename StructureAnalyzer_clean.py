@@ -171,7 +171,6 @@ if resn == stored.currentResn:
 
     ps.fill_valence(graph, respect_hcount=True, respect_bond_order=False)
 
-
     cmd.remove("hydro")
     return graph
 
@@ -227,7 +226,7 @@ def writeXML(graph, interactionList, pdbCode):
         file.write("<MTextBox id=\"distBox" +
                    str(j) + "\" autoSize=\"true\">\n")
         file.write("<Field name=\"text\"><![CDATA[{D font=Arial,size=9}{fg=#000000}" + str(
-            round(interactions.dist, 3)) + " Å]]></Field>\n")
+            round(interactions.dist, 3)) + " \u00c5]]></Field>\n")
         file.write("<MPoint x=\"0\" y=\"0\"/>\n")
         file.write("<MPoint x=\"0\" y=\"0\"/>\n")
         file.write("<MPoint x=\"0\" y=\"0\"/>\n")
@@ -249,8 +248,7 @@ def writeXML(graph, interactionList, pdbCode):
     for interactions in interactionList:
         if (interactions.atomB.resn,  interactions.atomB.resi) not in done and interactions.atomB.resn != "HOH":  # no water tag
             done.append((interactions.atomB.resn,  interactions.atomB.resi))
-            file.write("<MTextBox id=\"box" + str(k) +
-                       "\" autoSize=\"true\">\n")
+            file.write(f"<MTextBox id=\"box{k}\" autoSize=\"true\">\n")
             file.write("<Field name=\"text\"><![CDATA[{D font=Arial,size=11}{fg=#000000}" + interactions.atomB.resn[0] +
                        interactions.atomB.resn[1:].lower() + " " + interactions.atomB.resi + "]]></Field>\n")
             file.write("<MPoint x=\"0\" y=\"0\"/>\n")
@@ -266,15 +264,15 @@ def writeXML(graph, interactionList, pdbCode):
                        str(dictionary[interactions.atomB.identifierString]) + "\"/>\n")
             k += 1
             file.write("</MPolyline>\n")
-
     file.write("</MDocument>")
-
+    file.close()
 
 
 # Main-code. Calculates the distances between a selected ligand and all atoms within a given cutoff-restriction of a given .pdb-code.
 def StructureAnalyzer(pdbCode="6hn0", ligandCode="DIF", inputString="* 1*vdw *", ignoreH2O=False):
 
     cmd.reinitialize()
+
 
     condition = analyzeInput(inputString)
     allDistances = []
@@ -309,7 +307,7 @@ else:
             minimalDistAtoms = ligands
 
     ligandSelectionName = (ligandCode + str(minimalDistResi))  # e.g. DIFxxx
-    print(ligandSelectionName + " has the smallest distance to the COG")
+    print(f"{ligandSelectionName} has the smallest distance to the COG")
 
     # drawing pocket and ligand
     cmd.hide('all')
@@ -368,12 +366,12 @@ else:
     currGraph = buildGraph(atomsForGraph)
     writeXML(currGraph, interactionList, pdbCode)
 
-    print("Analyzing " + pdbCode + " finished")
+    print(f"Analyzing {pdbCode} finished")
 
 
 def multipleAnalyzer(pdbArray, ligand="DIF", inputString="* 1*vdw *", ignoreH2O=False):
 
     for code in pdbArray:
         cmd.reinitialize()
-        print("\n start " + str(code))
+        print(f"\n start {code}")
         StructureAnalyzer(code, ligand, inputString, ignoreH2O)

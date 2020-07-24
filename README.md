@@ -1,5 +1,8 @@
 # StructureAnalyzer
 
+![logo](logo.png)
+
+
 A program analyzing 3D protein structures from PDB to generate 2D binding motives. The current version creates .mrv-files that can be open with [MarvinSketch](https://chemaxon.com/products/marvin) for example. The .mrv-file shows interactions between ligand and protein atoms.
 
 ## Requirements

@@ -39,7 +39,7 @@ e.g.
 
 to analyze the interactions of the PDB entry named [6HN0](https://www.rcsb.org/structure/6hn0) with Diclofenac within a cutoff range 1.1 times of the van-der-Waals distance around the Diclofenac. It's also restricted to ligands-Nitrogen and pocket-Oxygen or -Nitrogen.
 
-The produced .mrv-file can be found in the /Output directory. You can open the file using MarvinSketch. The interactions are represented by orange lines by default. The names of the residues are connected to the corresponding residue by a thin grey line so you can easily rearange them in a aesthetical way.
+The produced .mrv-file can be found in the /Output directory. You can open the file using MarvinSketch. The interactions are represented by orange lines by default. The names of the residues are connected to the corresponding residue by a thin grey line so you can easily rearange them in an aesthetical way.
 
 ## Short Documentation
 

@@ -140,8 +140,8 @@ This program uses [pysmiles](https://pypi.org/project/pysmiles/) writen by Peter
 
 ### Future steps
 
-- At the current state there is no way to show the bond length in the generated .mrv-file
 - In future versions there should be some more aesthetic options like different colours for different types of interactions.
+- There are some issues evaluating hydrogen bonds that has to be investigated.
 
 ## References
 

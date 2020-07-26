@@ -141,7 +141,8 @@ This program uses [pysmiles](https://pypi.org/project/pysmiles/) writen by Peter
 ### Future steps
 
 - In future versions there should be some more aesthetic options like different colours for different types of interactions.
-- There are some issues evaluating hydrogen bonds that has to be investigated. For example, it's not quite sure how the hydrogen atom has to be taken into account. 
+- There are some issues evaluating hydrogen bonds that has to be investigated. For example, it's not quite sure how the hydrogen atom has to be taken into account.
+- In future versions other non-pdb-files should also be evaluable.
 
 ## References
 

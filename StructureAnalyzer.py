@@ -3,6 +3,7 @@ import math
 import os
 import networkx as nx
 import pysmiles as ps
+from tabulate import tabulate
 
 vdwRadii = {
     "H": 1.10,
@@ -176,7 +177,7 @@ if resn == stored.currentResn:
 
 
 # writes a .mrv-file (XML format) that can be opened with e.g. Marvinsketch
-def writeXML(graph, interactionList, pdbCode):
+def writeXML(graph, interactionList, pdbCode, ligand):
 
     # creates an output folder
     try:
@@ -184,7 +185,7 @@ def writeXML(graph, interactionList, pdbCode):
     except:
         pass
 
-    file = open(("./Output/" + pdbCode + ".mrv"), "w", encoding="utf-8")
+    file = open((f"./Output/{pdbCode} {ligand[0].resn}{ligand[0].resi}.mrv"), "w", encoding="utf-8")
     file.write("<MDocument>\n<MChemicalStruct>\n<molecule>\n")
 
     dictionary = dict()
@@ -268,8 +269,31 @@ def writeXML(graph, interactionList, pdbCode):
     file.close()
 
 
+def writeTable(interactionList):
+
+    table = []
+
+    for interaction in interactionList:
+
+        AtomA = interaction.atomA
+        AtomB = interaction.atomB
+        dist = interaction.dist
+
+        table.append([f"{AtomA.resn} {AtomA.resi}/{AtomA.name}", dist, f"{AtomB.resn} {AtomB.resi}/{AtomB.name}", f"{AtomB.element}"])
+
+    formatedTable = tabulate(table, headers = ["atom ligand", "distance [A]", "atom pocket", "element"], tablefmt = "github")
+
+    print(formatedTable)
+
+    return formatedTable
+
+
+
 # Main-code. Calculates the distances between a selected ligand and all atoms within a given cutoff-restriction of a given .pdb-code.
 def StructureAnalyzer(pdbCode="6hn0", ligandCode="DIF", inputString="* 1*vdw *", ignoreH2O=False):
+
+    file = open((f"./Output/{pdbCode}.md"), "w", encoding="utf-8")
+
 
     cmd.reinitialize()
 
@@ -284,7 +308,7 @@ def StructureAnalyzer(pdbCode="6hn0", ligandCode="DIF", inputString="* 1*vdw *",
     stored.allLigandsAtoms = []
     stored.oldResi = ""
 
-    # iterates all Atoms belonging to the given ligand code and splits them up so you have an array of arrays containing positions of atoms
+    # iterates all Atoms belonging to the given ligand code and splits them up so you have an array of atoms
     cmd.iterate_state(-1, "allLigands", """\
 if(resi == stored.oldResi):
 	stored.allLigandsAtoms[(len(stored.allLigandsAtoms)-1)].append(Atom(x, y, z, model, chain, resn, resi, name, elem))
@@ -296,76 +320,85 @@ else:
     # gets the ligand with the least distance to the global cog
     minimalDist = 100000
     minimalDistAtoms = []
+    ligandCounter = 0
 
     for ligands in stored.allLigandsAtoms:
+        ligandCounter += 1
         currentCog = calcCog(ligands)
         currentDist = calcDist(currentCog, globalCog)
 
-        if minimalDist > currentDist:
-            minimalDist = currentDist
-            minimalDistResi = ligands[0].resi
-            minimalDistAtoms = ligands
+        # if minimalDist > currentDist:
 
-    ligandSelectionName = (ligandCode + str(minimalDistResi))  # e.g. DIFxxx
-    print(f"{ligandSelectionName} has the smallest distance to the COG")
+        minimalDist = currentDist
+        minimalDistResi = ligands[0].resi
+        minimalDistAtoms = ligands
 
-    # drawing pocket and ligand
-    cmd.hide('all')
-    cmd.select(ligandSelectionName, ligandCode +
-               "`" + str(minimalDistResi) + "/")
-    cmd.select('view', 'br. all within ' + (str(8)) +
-               ' of ' + ligandSelectionName)
-    cmd.select('pocket', 'view and not ' + ligandSelectionName)
+        ligandSelectionName = (ligandCode + str(minimalDistResi))  # e.g. DIFxxx
+        print(f"Analyzing {ligandSelectionName}...")
 
-    cmd.show('sticks', 'pocket')
-    cmd.show('sticks', ligandSelectionName)
-    cmd.util.cbaw('pocket')
-    cmd.util.cbao(ligandSelectionName)
+        # drawing pocket and ligand
+        cmd.hide('all')
+        cmd.select(ligandSelectionName, ligandCode +
+                "`" + str(minimalDistResi) + "/")
+        cmd.select('view', 'br. all within ' + (str(8)) +
+                ' of ' + ligandSelectionName)
+        cmd.select('pocket', 'view and not ' + ligandSelectionName)
 
-    # preparations
-    stored.atomsPocket = []  # all Atoms of the Pocket
-    currDist = 0
+        cmd.show('sticks', 'pocket')
+        cmd.show('sticks', ligandSelectionName)
+        cmd.util.cbaw('pocket')
+        cmd.util.cbao(ligandSelectionName)
 
-    # reads all informations belonging to the selected binding pocket
-    cmd.iterate_state(-1, 'pocket',
-                      "stored.atomsPocket.append(Atom(x, y, z, model, chain, resn, resi, name, elem))")
+        # preparations
+        stored.atomsPocket = []  # all Atoms of the Pocket
+        currDist = 0
 
-    interactionList = []
-    atomsForGraph = []
+        # reads all informations belonging to the selected binding pocket
+        cmd.iterate_state(-1, 'pocket',
+                        "stored.atomsPocket.append(Atom(x, y, z, model, chain, resn, resi, name, elem))")
 
-    # main-main-code: calculates the distances of each atom belonging to the pocket to each atom belonging to the ligand. If the distance is less than the cutoff the distance is drawn
-    for ligandAtoms in minimalDistAtoms:
-        atomsForGraph.append(ligandAtoms)
+        interactionList = []
+        atomsForGraph = []
 
-        if (ligandAtoms.element in condition[0] or "*" in condition[0]):
+        # main-main-code: calculates the distances of each atom belonging to the pocket to each atom belonging to the ligand. If the distance is less than the cutoff the distance is drawn
+        for ligandAtoms in minimalDistAtoms:
+            atomsForGraph.append(ligandAtoms)
 
-            for pocketAtoms in stored.atomsPocket:
-                if (pocketAtoms.resn == "HOH") and ignoreH2O:
-                    continue
+            if (ligandAtoms.element in condition[0] or "*" in condition[0]):
 
-                currDist = calcDist(ligandAtoms.pos, pocketAtoms.pos)
+                for pocketAtoms in stored.atomsPocket:
+                    if (pocketAtoms.resn == "HOH") and ignoreH2O:
+                        continue
 
-                if (pocketAtoms.element in condition[2] or "*" in condition[2]):
+                    currDist = calcDist(ligandAtoms.pos, pocketAtoms.pos)
 
-                    if "vdw" in condition[1]:
-                        cutoff = getCutoff(
-                            [ligandAtoms, condition[1], pocketAtoms])
-                    else:
-                        cutoff = float(condition[1][0])
+                    if (pocketAtoms.element in condition[2] or "*" in condition[2]):
 
-                    if currDist <= cutoff:
+                        if "vdw" in condition[1]:
+                            cutoff = getCutoff(
+                                [ligandAtoms, condition[1], pocketAtoms])
+                        else:
+                            cutoff = float(condition[1][0])
 
-                        cmd.distance(
-                            ("distance"), ligandAtoms.identifierString, pocketAtoms.identifierString, cutoff)
-                        cmd.color("cyan", "distance")
+                        if currDist <= cutoff:
 
-                        interactionList.append(Interaction(
-                            ligandAtoms, pocketAtoms, currDist))
-                        atomsForGraph.append(pocketAtoms)
+                            cmd.distance(
+                                ("distance"), ligandAtoms.identifierString, pocketAtoms.identifierString, cutoff)
+                            cmd.color("cyan", "distance")
 
-    currGraph = buildGraph(atomsForGraph)
-    writeXML(currGraph, interactionList, pdbCode)
+                            interactionList.append(Interaction(
+                                ligandAtoms, pocketAtoms, currDist))
+                            atomsForGraph.append(pocketAtoms)
 
+        currGraph = buildGraph(atomsForGraph)
+        writeXML(currGraph, interactionList, pdbCode, ligands)
+
+        file.write(f"\n # {ligands[0].resn}{ligands[0].resi}\n")
+        file.write(writeTable(interactionList))
+
+        print(f"Analyzing {ligands[0].resn}{ligands[0].resi} finished")
+    
+    file.close()
     print(f"Analyzing {pdbCode} finished")
 
 

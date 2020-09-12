@@ -4,6 +4,7 @@ import os
 import networkx as nx
 import pysmiles as ps
 from tabulate import tabulate
+from dataclasses import dataclass
 
 vdwRadii = {
     "H": 1.10,
@@ -53,27 +54,38 @@ vdwRadii = {
 }
 
 
-class Interaction:
-    def __init__(self, atomA, atomB, distance):
-        self.atomA = atomA
-        self.atomB = atomB
-        self.dist = distance
-
-
+@dataclass
 class Atom:
-    def __init__(self, x=0, y=0, z=0, model="none", chain="none", resn="none", resi="none", name="none", element="none"):
-        self.x = x  # pos x
-        self.y = y  # pos y
-        self.z = z  # pos z
-        self.pos = (x, y, z)
-        self.model = model  # which protein, e.g. 6hn0
-        self.chain = chain  # which sidechain, e.g. A
-        self.resn = resn  # name of residue, e.g. DIF
-        self.resi = resi  # identifier of residue, e.g. 607
-        self.name = name  # name of atom, e.g. CL4
-        self.element = element[0] + element[1:].lower()  # element, e.g. Cl
-        self.identifierString = model + "//" + \
-            chain + "/" + resn + "`" + resi + "/" + name
+    x: x = 0 # pos x
+    y: y = 0 # pos y
+    z: z = 0 # pos z
+    
+    model: str = "none"  # which protein, e.g. 6hn0
+    chain: str = "none" # which sidechain, e.g. A
+    resn: str = "none" # name of residue, e.g. DIF
+    resi: str = "none" # identifier of residue, e.g. 607
+    name: str = "none" # name of atom, e.g. CL4
+    elem: str = "none"
+
+    @property
+    def element(self):
+        return self.elem[0]+self.elem[1:].lower() # element, e.g. Cl
+
+    @property
+    def identifierString(self):
+        return f"{self.model}//{self.chain}/{self.resn}`{self.resi}/{self.name}"
+    # identifierString = model + "//" + \
+    #     chain + "/" + resn + "`" + resi + "/" + name
+    
+    @property
+    def pos(self):
+        return (self.x, self.y, self.z)
+
+@dataclass
+class Interaction:
+        atomA: Atom
+        atomB: Atom
+        dist: float
 
 
 def calcDist(pos1, pos2):  # calculates the 3D-distance of two given coordinates
@@ -136,8 +148,7 @@ def getCutoff(array):  # array is like [Atom1, ['factor','vdw'], Atom2]
                      vdwRadii[array[2].element]) * float(array[1][0])
 
     except:
-        print("Error: unable to evaluate vdwRadii for " +
-              array[0].element + " and/or " + array[2].element)
+        print(f"Error: unable to evaluate vdwRadii for {array[0].element} and/or {array[2].element}")
 
     return vdwCutoff
 
@@ -153,8 +164,7 @@ def buildGraph(atomlist):  # turns the given molecule (list of atoms) into a net
         i += 1
         stored.currNeighbor = []
         currentNode = queue.pop(-1)
-        cmd.select("neighborSelection", "neighbor " +
-                   currentNode.identifierString)
+        cmd.select("neighborSelection", f"neighbor {currentNode.identifierString}")
         stored.currentResn = currentNode.resn
         cmd.iterate_state(-1, "neighborSelection", """\
 if resn == stored.currentResn:
@@ -393,7 +403,7 @@ else:
         currGraph = buildGraph(atomsForGraph)
         writeXML(currGraph, interactionList, pdbCode, ligands)
 
-        file.write(f"\n # {ligands[0].resn}{ligands[0].resi}\n")
+        file.write(f"\n \n # {ligands[0].resn}{ligands[0].resi}\n")
         file.write(writeTable(interactionList))
 
         print(f"Analyzing {ligands[0].resn}{ligands[0].resi} finished")

@@ -15,7 +15,11 @@ To ensure optimal workflow first install Python from [here](https://www.python.o
 
 Next install the required packages using
 
-```pip install pysmiles```.
+```pip install pysmiles```
+
+and
+
+```pip install tabulate```.
 
 To view the generated .mrv-file (xml like) I recommend using MarvinSketch (download from [here](https://chemaxon.com/products/marvin/download)). To use this you have to create an account and sign in.
 

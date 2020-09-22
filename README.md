@@ -46,6 +46,8 @@ The produced .mrv-file can be found in the /Output directory. You can open the f
 
 ## Short Documentation
 
+![workflow](workflow.png)
+
 The program is optimized and mainly tested for 6HN0 and DIF. Although it will (hopefully) work for (almost) all codes given in the PDB. Arguments marked by an asterisk \* are mandatory.
 
 ### PDB-code\* (string)
@@ -113,7 +115,7 @@ The first and the third statement determines which elements are allowed on the l
 
 The middle statement determines the cutoff. There are two ways to use this. First, you can just type a float representing a constant cutoff for interactions.
 
-The second way is to determine the cutoff on a dynamical way. Therefore the [van-der-Waals-radii](https://en.wikipedia.org/wiki/Van_der_Waals_radius) are used. The vdw-radii are currently obtained from [1]. The cutoff is then calculated as the sum of the [van-der-Waals-radii](https://en.wikipedia.org/wiki/Van_der_Waals_radius) of the interacting elements (multiplied by an optional factor). ~~If one of the investigated elements is bond to an hydrogen atom, the cutoff is extended by the diameter of the hydrogen atom to take possible [hydrogen bonds](https://en.wikipedia.org/wiki/Hydrogen_bond) into account. C-H-\* hydrogen bonds are ignored.~~ To use the second way your second statement must be something like "factor\*vdw".
+The second way is to determine the cutoff on a dynamical way. Therefore the [van-der-Waals-radii](https://en.wikipedia.org/wiki/Van_der_Waals_radius) are used. The vdw-radii are currently obtained from [1]. The cutoff is then calculated as the sum of the [van-der-Waals-radii](https://en.wikipedia.org/wiki/Van_der_Waals_radius) of the interacting elements (multiplied by an optional factor). To use the second way your second statement must be something like "factor\*vdw".
 
 ---
 

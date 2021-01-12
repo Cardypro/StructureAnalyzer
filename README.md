@@ -64,6 +64,7 @@ The condition determines which interactions are depicted. **It always insists of
 
 The first and the third statement determines which elements are allowed on the ligand side and the pocket/protein side repectively. Multiple elements can be allowed by separating them with a "|" (pipe). "\*" (asterisk) means "all elements". The currently supported elements can be found below.
 
+
 <details>
 	<summary>van der Waals radii</summary>
 	
@@ -125,7 +126,11 @@ The cutoff is calculated by using simple 3D geometry (Pythagorean theorem). **Th
 
 This decides whether to ignore water molecules or not. The default value is False so water molecules are depicted.
 
-### multipleAnalyzer (array of PDB-codes, Ligand code, condition, ignoreH2O)
+### defaultRadius (float)
+
+The fallback radius that should be used if the radius for the current element is not defined in the vdwRadii-table (see above). If there is no default radius given, not lited elements won't be evaluated.
+
+### multipleAnalyzer (array of PDB-codes, Ligand code, condition, ignoreH2O, defaultRadius)
 Instead of using the StructureAnalyzer command you can use the multipleAnalyzer. This allows you to analyze more than one pdb-code at once. It works similar to the StructureAnalyzer except it takes an array of strings containing the protein codes to be analyzed.  
 E.g. multipleAnalyzer(\["6hno","6hn1"\], "DIF")
 

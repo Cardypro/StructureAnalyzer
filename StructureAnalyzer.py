@@ -454,9 +454,9 @@ else:
     print(f"Analyzing {pdbCode} finished")
 
 
-def multipleAnalyzer(pdbArray, ligand="DIF", inputString="* 1*vdw *", ignoreH2O=False):
+def multipleAnalyzer(pdbArray, ligand="DIF", inputString="* 1*vdw *", ignoreH2O=False, defaultRadius = None):
 
     for code in pdbArray:
         cmd.reinitialize()
         print(f"\n start {code}")
-        StructureAnalyzer(code, ligand, inputString, ignoreH2O)
+        StructureAnalyzer(code, ligand, inputString, ignoreH2O, defaultRadius)

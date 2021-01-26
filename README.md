@@ -130,9 +130,44 @@ This decides whether to ignore water molecules or not. The default value is Fals
 
 The fallback radius that should be used if the radius for the current element is not defined in the vdwRadii-table (see above). If there is no default radius given, not lited elements won't be evaluated.
 
+### pocketSize (float)
+
+Determines the size of the pocket that is shown in pyMOL. The default value is 8 A.
+
+### writeMD (boolean)
+
+Determines if the interaction table (below) should be written in a markdown (github format) file. Default is True.
+
+<details>
+	<summary>Example of an interaction table </summary>
+	
+ # DIF 605 
+| atom ligand   |   distance [A] | atom pocket   | element   |
+|---------------|----------------|---------------|-----------|
+| DIF 605/CL2   |        3.27785 | ARG 208/CG    | C         |
+| DIF 605/C1    |        3.15951 | HOH 1016/O    | O         |
+| DIF 605/N1    |        2.82841 | HOH 884/O     | O         |
+| DIF 605/O1    |        3.10756 | DIF 606/C5    | C         |
+| DIF 605/O2    |        2.71713 | ASP 323/O     | O         |
+| DIF 605/O2    |        3.09461 | DIF 606/C5    | C         |
+| DIF 605/O2    |        3.08978 | DIF 606/C6    | C         |
+| DIF 605/C8    |        2.93876 | HOH 884/O     | O         |
+| DIF 605/C14   |        3.03511 | DIF 606/C5    | C         |
+ # DIF 606 
+| atom ligand   |   distance [A] | atom pocket   | element   |
+|---------------|----------------|---------------|-----------|
+| DIF 606/C5    |        3.10756 | DIF 605/O1    | O         |
+| DIF 606/C5    |        3.09461 | DIF 605/O2    | O         |
+| DIF 606/C5    |        3.03511 | DIF 605/C14   | C         |
+| DIF 606/C6    |        3.08978 | DIF 605/O2    | O         |
+| DIF 606/C11   |        3.10796 | GLU 353/OE2   | O         |
+| DIF 606/C11   |        2.93863 | HOH 815/O     | O         |
+| DIF 606/C12   |        2.99284 | HOH 815/O     | O         |
+</details>
+
 ### multipleAnalyzer (array of PDB-codes, Ligand code, condition, ignoreH2O, defaultRadius)
 Instead of using the StructureAnalyzer command you can use the multipleAnalyzer. This allows you to analyze more than one pdb-code at once. It works similar to the StructureAnalyzer except it takes an array of strings containing the protein codes to be analyzed.  
-E.g. multipleAnalyzer(\["6hno","6hn1"\], "DIF")
+E.g. multipleAnalyzer(\["6hn0","6hn1"\], "DIF")
 
 ## Troubleshooting
 

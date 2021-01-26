@@ -34,7 +34,7 @@ After downloading StructureAnalyzer open Anaconda Prompt, navigate to the path w
 
 Pymol should start now. Type
 
-``` StructureAnalyzer("PDB-code", "Ligand code", "condition", ignoreH2O)```
+``` StructureAnalyzer("PDB-code", "Ligand code", "condition", ignoreH2O, defaultRadius)```
 
 e.g.
 

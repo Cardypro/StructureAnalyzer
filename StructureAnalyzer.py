@@ -441,8 +441,8 @@ def StructureAnalyzer(pdbCode="6hn0", ligandCode="DIF", inputString="* 1*vdw *",
         ligandCode (str, optional): Determines the pdb code of the ligand. Defaults to "DIF".
         inputString (str, optional): see readme. Defaults to "* 1*vdw *".
         ignoreH2O (bool, optional): Determines if water should be ignored. Defaults to False.
-        defaultRadius ([type], optional): Default atom radius if no radius is given for the element. Defaults to None.
-        pocketSize (int, optional): View distance of pocket and ligand in pyMOL. Defaults to 8.
+        defaultRadius (float, optional): Default atom radius if no radius is given for the element. Defaults to None.
+        pocketSize (float, optional): View distance of pocket and ligand in pyMOL. Defaults to 8.
         writeMD (bool, optional): Determinest if a markdown file should be written. Defaults to True.
     """
 

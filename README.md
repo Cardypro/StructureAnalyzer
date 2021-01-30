@@ -179,7 +179,7 @@ make sure you've installed Pymol **after** you've installed Anaconda.
 
 ## Further notes
 
-### Intern SMILES usage
+### Internal SMILES usage
 
 This program uses [pysmiles](https://pypi.org/project/pysmiles/) writen by Peter C. Kroon - special thanks to him. The program generates network graphs obtained by [Depth-first search](https://en.wikipedia.org/wiki/Depth-first_search)ing the ligand and generating a graph with atoms as nodes and bonds as edges. Since PyMOL isn't able to give information about the bond order PySmiles calculates the bond order from one atom to another.
 

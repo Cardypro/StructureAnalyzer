@@ -1,11 +1,16 @@
-from pymol import cmd, stored
+"""
+TODO module docstring
+"""
+
 import math
 import os
-import networkx as nx
-import pysmiles as ps
-from tabulate import tabulate
 from dataclasses import dataclass
 from collections import defaultdict
+
+import networkx as nx
+import pysmiles as ps
+from pymol import cmd, stored
+from tabulate import tabulate
 
 vdwRadii = None
 
@@ -77,7 +82,7 @@ class Atom:
         str resn: name of residue, e.g. DIF or ASN
         str resi: identifier of residue, e.g. 607
         str name: name of atom, e.g. CL4
-        str element: element of atom, e.g. CL 
+        str element: element of atom, e.g. CL
     """
     x: x = 0  # pos x
     y: y = 0  # pos y
@@ -141,51 +146,54 @@ def calcDist(pos1, pos2):
     return dist
 
 
-def calcCog(argument):
+def calcCogFromStr(selection):
+    """
+    calculates the center of geometry of a given PyMOL selection
+    """
+    stored.cogX, stored.cogY, stored.cogZ = 0, 0, 0
+    stored.i = 1
 
-    def calcCogFromStr(argument):
-        """
-        calculates the center of geometry of a given PyMOL selection
-        """
-
-        selection = argument
-        stored.cogX, stored.cogY, stored.cogZ = 0, 0, 0
-        stored.i = 1
-
-        # has to be in an if statement since otherwise there have to be multiple for loops (pyMOL)
-        cmd.iterate_state(-1, selection, """\
+    # has to be in an if statement since otherwise there have to be multiple for loops (pyMOL)
+    cmd.iterate_state(-1, selection, """\
 if(True):
-    stored.cogX += x
-    stored.cogY += y
-    stored.cogZ += z
-    stored.i += 1
+stored.cogX += x
+stored.cogY += y
+stored.cogZ += z
+stored.i += 1
 """)
-        return(stored.cogX/stored.i, stored.cogY/stored.i, stored.cogZ/stored.i)
+    return(stored.cogX/stored.i, stored.cogY/stored.i, stored.cogZ/stored.i)
 
-    def calcCogFromList(argument):
-        """
-        calculates the center of geometry of a given Array containing atoms
-        """
+def calcCogFromList(entries):
+    """
+    calculates the center of geometry of a given Array containing atoms
+    """
 
-        sumX, sumY, sumZ = 0, 0, 0
+    sumX, sumY, sumZ = 0, 0, 0
 
-        for entries in argument:
-            sumX += entries.x
-            sumY += entries.y
-            sumZ += entries.z
+    for entry in entries:
+        sumX += entry.x
+        sumY += entry.y
+        sumZ += entry.z
 
-        avgX = sumX/len(argument)
-        avgY = sumY/len(argument)
-        avgZ = sumZ/len(argument)
+    avgX = sumX/len(entries)
+    avgY = sumY/len(entries)
+    avgZ = sumZ/len(entries)
 
-        return(avgX, avgY, avgZ)
+    return(avgX, avgY, avgZ)
 
-    if type(argument) == str:
+
+def calcCog(argument):
+    """
+    TODO missing dostring
+    """
+
+    if isinstance(argument, str):
         return calcCogFromStr(argument)
-    elif type(argument) == list:
+
+    if isinstance(argument, list):
         return calcCogFromList(argument)
-    else:
-        exit("unable to calculate the CoG from the given argument")
+
+    exit("unable to calculate the CoG from the given argument")
 
 
 def analyzeInput(inputString):  # splits the input string so it can be read
@@ -198,10 +206,10 @@ def analyzeInput(inputString):  # splits the input string so it can be read
     Returns:
         list: list of lists. Like [['C', 'N'], [2,'vdw'], ['C', 'O']]
     """
-    input = inputString.split()
-    inputA = input[0].split("|")
-    length = input[1].split("*")
-    inputB = input[2].split("|")
+    inputParts = inputString.split()
+    inputA = inputParts[0].split("|")
+    length = inputParts[1].split("*")
+    inputB = inputParts[2].split("|")
     return [inputA, length, inputB]
 
 
@@ -213,7 +221,7 @@ def getCutoff(array):
         array (list): like [Atom1, ['factor','vdw'], Atom2]
 
     Returns:
-        float: max distance between the atoms to be evaluated as interaction 
+        float: max distance between the atoms to be evaluated as interaction
     """
     elementA = array[0].element
     elementB = array[2].element
@@ -291,7 +299,7 @@ def writeXML(graph, interactionList: list, pdbCode: str, ligand: list) -> None:
     writes a .mrv-file (XML format) that can be opened with e.g. Marvin Sketch
 
     Args:
-        graph (Networx.Graph): 
+        graph (Networx.Graph):
     """
 
     # creates an output folder
@@ -515,38 +523,41 @@ else:
 
             conditionElementsLigand = condition[0]
 
-            if (ligandAtoms.element in conditionElementsLigand or "*" in conditionElementsLigand):
+            if not (ligandAtoms.element in conditionElementsLigand or "*" in conditionElementsLigand):
+                continue
 
-                for pocketAtoms in stored.atomsPocket:
-                    if (pocketAtoms.resn == "HOH") and ignoreH2O:
-                        continue
+            for pocketAtoms in stored.atomsPocket:
+                if (pocketAtoms.resn == "HOH") and ignoreH2O:
+                    continue
 
-                    conditionElementsPocket = condition[2]
-                    if (pocketAtoms.element in conditionElementsPocket or "*" in conditionElementsPocket):
+                conditionElementsPocket = condition[2]
+                if not (pocketAtoms.element in conditionElementsPocket or "*" in conditionElementsPocket):
+                    continue
 
-                        conditionDistance = condition[1]
-                        if "vdw" in conditionDistance:
-                            cutoff = getCutoff(
-                                [ligandAtoms, conditionDistance, pocketAtoms])
-                        else:
-                            cutoff = float(conditionDistance[0])
+                conditionDistance = condition[1]
+                if "vdw" in conditionDistance:
+                    cutoff = getCutoff(
+                        [ligandAtoms, conditionDistance, pocketAtoms])
+                else:
+                    cutoff = float(conditionDistance[0])
 
-                        if cutoff is None:
-                            continue
+                if cutoff is None:
+                    continue
 
-                        currDist = calcDist(ligandAtoms.pos, pocketAtoms.pos)
-                        if currDist <= cutoff:
+                currDist = calcDist(ligandAtoms.pos, pocketAtoms.pos)
+                if currDist > cutoff:
+                    continue
 
-                            interactionLayerName = f"inter_{LigandName}"
-                            cmd.distance(
-                                interactionLayerName, ligandAtoms.identifierString, pocketAtoms.identifierString, cutoff+1)
-                            cmd.color("cyan", interactionLayerName)
-                            cmd.show("dashes", interactionLayerName)
+                interactionLayerName = f"inter_{LigandName}"
+                cmd.distance(
+                    interactionLayerName, ligandAtoms.identifierString, pocketAtoms.identifierString, cutoff+1)
+                cmd.color("cyan", interactionLayerName)
+                cmd.show("dashes", interactionLayerName)
 
-                            interactionList.append(Interaction(
-                                ligandAtoms, pocketAtoms, currDist))
+                interactionList.append(Interaction(
+                    ligandAtoms, pocketAtoms, currDist))
 
-                            atomsForGraph.append(pocketAtoms)
+                atomsForGraph.append(pocketAtoms)
 
         currGraph = buildGraph(atomsForGraph)
         writeXML(currGraph, interactionList, pdbCode, ligands)
@@ -561,7 +572,9 @@ else:
 
 
 def multipleAnalyzer(pdbArray, ligand="DIF", inputString="* 1*vdw *", ignoreH2O=False, defaultRadius=None):
-
+    """
+    TODO function docstring
+    """
     for code in pdbArray:
         cmd.reinitialize()
         print(f"\n start {code}")

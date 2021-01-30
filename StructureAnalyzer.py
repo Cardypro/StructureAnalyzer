@@ -4,6 +4,7 @@ TODO module docstring
 
 import math
 import os
+from typing import Dict, Tuple, List, Union, Optional
 from dataclasses import dataclass
 from collections import defaultdict
 
@@ -12,10 +13,10 @@ import pysmiles as ps
 from pymol import cmd, stored
 from tabulate import tabulate
 
-vdwRadii = None
+vdwRadii: Dict[str, Optional[float]] = {}
 
 
-def defineDict(defaultRadius):
+def defineDict(defaultRadius: Optional[float]) -> None:
     """
     defines the vdw-radii dict as given by Truhlar et al. If the key isn't in the dict, the defaultRadius will be returned.
     """
@@ -97,7 +98,7 @@ class Atom:
     elem: str = "none"
 
     @property
-    def element(self):
+    def element(self) -> str:
         """
         Returns:
             string: element with capital first letter as usual (e.g. CL -> Cl)
@@ -105,7 +106,7 @@ class Atom:
         return self.elem[0]+self.elem[1:].lower()  # element, e.g. Cl
 
     @property
-    def identifierString(self):
+    def identifierString(self) -> str:
         """
         Returns:
             string: identifierString to adress a certain Atom in the pdb structure via pyMOL
@@ -113,7 +114,7 @@ class Atom:
         return f"{self.model}//{self.chain}/{self.resn}`{self.resi}/{self.name}"
 
     @property
-    def pos(self):
+    def pos(self) -> Tuple[float, float, float]:
         """
         Returns:
             triple: cartesian coordinates of the atom
@@ -131,7 +132,7 @@ class Interaction:
     dist: float
 
 
-def calcDist(pos1, pos2):
+def calcDist(pos1: Tuple[float, float, float], pos2: Tuple[float, float, float]) -> float:
     """
     calculates the 3D-distance of two given coordinates
     """
@@ -147,7 +148,7 @@ def calcDist(pos1, pos2):
     return dist
 
 
-def calcCogFromStr(selection):
+def calcCogFromStr(selection: str) -> Tuple[float, float, float]:
     """
     calculates the center of geometry of a given PyMOL selection
     """
@@ -165,12 +166,12 @@ stored.i += 1
     return(stored.cogX/stored.i, stored.cogY/stored.i, stored.cogZ/stored.i)
 
 
-def calcCogFromList(entries):
+def calcCogFromList(entries: List[Atom]) -> Tuple[float, float, float]:
     """
     calculates the center of geometry of a given Array containing atoms
     """
 
-    sumX, sumY, sumZ = 0, 0, 0
+    sumX, sumY, sumZ = 0.0, 0.0, 0.0
 
     for entry in entries:
         sumX += entry.x
@@ -184,7 +185,7 @@ def calcCogFromList(entries):
     return(avgX, avgY, avgZ)
 
 
-def calcCog(argument):
+def calcCog(argument: Union[str, list]) -> Tuple[float, float, float]:
     """
     TODO missing dostring
     """
@@ -199,7 +200,7 @@ def calcCog(argument):
     return (0, 0, 0)
 
 
-def analyzeInput(inputString):  # splits the input string so it can be read
+def analyzeInput(inputString: str) -> Tuple[List[str], List[str], List[str]]:
     """
     splits the input string so it can be read
 
@@ -207,16 +208,16 @@ def analyzeInput(inputString):  # splits the input string so it can be read
         inputString (str): has to be like "elemA|elemB|... factor*vdw elemC|elemD|..."
 
     Returns:
-        list: list of lists. Like [['C', 'N'], [2,'vdw'], ['C', 'O']]
+        list: list of lists. Like [['C', 'N'], ['2','vdw'], ['C', 'O']]
     """
     inputParts = inputString.split()
     inputA = inputParts[0].split("|")
     length = inputParts[1].split("*")
     inputB = inputParts[2].split("|")
-    return [inputA, length, inputB]
+    return (inputA, length, inputB)
 
 
-def getCutoff(array):
+def getCutoff(array: Tuple[Atom, List[str], Atom]) -> Optional[float]:
     """
     calculates cutoff via vdwRadii
 
@@ -252,7 +253,7 @@ def getCutoff(array):
     return (radiusA + radiusB) * factor
 
 
-def buildGraph(atomlist):  # turns the given molecule (list of atoms) into a network graph
+def buildGraph(atomlist: List[Atom]) -> nx.Graph:
     """
     turns the given molecule (list of atoms) into a network graph
 
@@ -297,7 +298,7 @@ if resn == stored.currentResn:
 # writes a .mrv-file (XML format) that can be opened with e.g. Marvinsketch
 
 
-def writeXML(graph, interactionList: list, pdbCode: str, ligand: list) -> None:
+def writeXML(graph: nx.Graph, interactionList: List[Interaction], pdbCode: str, ligand: List[Atom]) -> None:
     """
     writes a .mrv-file (XML format) that can be opened with e.g. Marvin Sketch
 
@@ -414,7 +415,7 @@ def writeXML(graph, interactionList: list, pdbCode: str, ligand: list) -> None:
     file.close()
 
 
-def writeTable(file, interactionList):
+def writeTable(file, interactionList: List[Interaction]) -> None:
     """
     writes the interaction table to a markdown file
 
@@ -443,7 +444,7 @@ def writeTable(file, interactionList):
     file.close()
 
 
-def StructureAnalyzer(pdbCode="6hn0", ligandCode="DIF", inputString="* 1*vdw *", ignoreH2O=False, defaultRadius=None, pocketSize=8, writeMD=True):
+def StructureAnalyzer(pdbCode: str = "6hn0", ligandCode: str = "DIF", inputString: str = "* 1*vdw *", ignoreH2O: bool = False, defaultRadius: Optional[float] = None, pocketSize: float = 8.0, writeMD: bool = True) -> None:
     """
     Main-code. Calculates the distances between a selected ligand and all atoms within a given cutoff-restriction of a given .pdb-code.
 
@@ -540,7 +541,7 @@ else:
                 conditionDistance = condition[1]
                 if "vdw" in conditionDistance:
                     cutoff = getCutoff(
-                        [ligandAtoms, conditionDistance, pocketAtoms])
+                        (ligandAtoms, conditionDistance, pocketAtoms))
                 else:
                     cutoff = float(conditionDistance[0])
 
@@ -574,7 +575,7 @@ else:
     print(f"Analyzing {pdbCode} finished")
 
 
-def multipleAnalyzer(pdbArray, ligand="DIF", inputString="* 1*vdw *", ignoreH2O=False, defaultRadius=None):
+def multipleAnalyzer(pdbArray: List[str], ligand: str = "DIF", inputString: str = "* 1*vdw *", ignoreH2O: bool = False, defaultRadius: Optional[float] = None) -> None:
     """
     TODO function docstring
     """

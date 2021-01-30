@@ -16,7 +16,8 @@ vdwRadii = None
 
 
 def defineDict(defaultRadius):
-    """defines the vdw-radii dict as given by Truhlar et al. If the key isn't in the dict, the defaultRadius will be returned.
+    """
+    defines the vdw-radii dict as given by Truhlar et al. If the key isn't in the dict, the defaultRadius will be returned.
     """
     global vdwRadii
     vdwRadii = defaultdict(lambda: defaultRadius)
@@ -84,9 +85,9 @@ class Atom:
         str name: name of atom, e.g. CL4
         str element: element of atom, e.g. CL
     """
-    x: x = 0  # pos x
-    y: y = 0  # pos y
-    z: z = 0  # pos z
+    x: float = 0  # pos x
+    y: float = 0  # pos y
+    z: float = 0  # pos z
 
     model: str = "none"  # which protein, e.g. 6hn0
     chain: str = "none"  # which sidechain, e.g. A
@@ -163,6 +164,7 @@ stored.i += 1
 """)
     return(stored.cogX/stored.i, stored.cogY/stored.i, stored.cogZ/stored.i)
 
+
 def calcCogFromList(entries):
     """
     calculates the center of geometry of a given Array containing atoms
@@ -194,6 +196,7 @@ def calcCog(argument):
         return calcCogFromList(argument)
 
     exit("unable to calculate the CoG from the given argument")
+    return (0, 0, 0)
 
 
 def analyzeInput(inputString):  # splits the input string so it can be read

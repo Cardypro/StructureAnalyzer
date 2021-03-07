@@ -189,6 +189,10 @@ This program uses [pysmiles](https://pypi.org/project/pysmiles/) writen by Peter
 - There are some issues evaluating hydrogen bonds that has to be investigated. For example, it's not quite sure how the hydrogen atom has to be taken into account.
 - In future versions other non-pdb-files should also be evaluable.
 
+## Poster
+
+![Poster](PosterSummary.png)
+
 ## References
 
 [1] M. Mantina, A. C. Chamberlin, R. Valero, C. J. Cramer, D. G. Truhlar, _J. Phys. Chem. A_ **2009**, 113, 5806, doi: 10.1021/jp8111556.
@@ -211,3 +215,4 @@ StructureAnalyzer and PySmiles are distributed under the Apache 2.0 license.
 > WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 > See the License for the specific language governing permissions and
 > limitations under the License.
+

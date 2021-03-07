@@ -1,6 +1,6 @@
-"""
-TODO module docstring
-"""
+    """
+    A program analyzing 3D protein structures from PDB to generate 2D binding motives. For Further information see https://github.com/Cardypro/StructureAnalyzer
+    """
 
 import math
 import os
@@ -187,7 +187,13 @@ def calcCogFromList(entries: List[Atom]) -> Tuple[float, float, float]:
 
 def calcCog(argument: Union[str, list]) -> Tuple[float, float, float]:
     """
-    TODO missing dostring
+    calculates the Center of Geometry of a given selection or list of atoms
+
+    Args:
+        argument (str or list): either a PyMOL-selection name or a List of atoms
+
+    Returns:
+        Tuple[float, float, float]: 3D-coords of CoG
     """
 
     if isinstance(argument, str):
@@ -577,7 +583,14 @@ else:
 
 def multipleAnalyzer(pdbArray: List[str], ligand: str = "DIF", inputString: str = "* 1*vdw *", ignoreH2O: bool = False, defaultRadius: Optional[float] = None) -> None:
     """
-    TODO function docstring
+    executes the StructureAnalyzer multiple times for a list of pdb-codes
+
+    Args:
+        pdbArray (List[str]): list containing the pdb-codes to be analyzed
+        ligand (str, optional): pdb-code of the ligand. Defaults to "DIF".
+        inputString (str, optional): String determining the cutoff criteria. Defaults to "* 1*vdw *".
+        ignoreH2O (bool, optional): Decides if water should be ignored evaluating the interactions. Defaults to False.
+        defaultRadius (Optional[float], optional): Fallback radius if a atom radius is not in the list given by Truhlar et al. Defaults to None.
     """
     for code in pdbArray:
         cmd.reinitialize()

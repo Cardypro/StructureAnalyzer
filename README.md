@@ -30,7 +30,7 @@ To get the latest version of StructureAnalyzer use
 
 After downloading StructureAnalyzer open Anaconda Prompt, navigate to the path where you installed the StructureAnalyzer and execute
 
-```pymol StructureAnalyzer_clean.py```
+```pymol StructureAnalyzer.py```
 
 Pymol should start now. Type
 
